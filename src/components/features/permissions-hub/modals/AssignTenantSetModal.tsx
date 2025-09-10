@@ -12,6 +12,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import { AadGroup, Tenant, PermissionSet } from '@/types/mockAzureAD'
 import { usePermissionsStore } from '@/store/usePermissionsStore'
 import { Search, ChevronDown, ChevronRight } from 'lucide-react'
@@ -54,6 +55,7 @@ export function AssignTenantSetModal({
   const [selectedPermissionSetId, setSelectedPermissionSetId] = useState<string>('')
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [expandedSets, setExpandedSets] = useState<Set<string>>(new Set())
+  const [noAccess, setNoAccess] = useState<boolean>(false)
 
   // Find existing tenant-level assignment for this group
   const existingAssignment = assignments.find(
@@ -75,8 +77,10 @@ export function AssignTenantSetModal({
   React.useEffect(() => {
     if (existingAssignment) {
       setSelectedPermissionSetId(existingAssignment.permissionSetId)
+      setNoAccess(false)
     } else {
       setSelectedPermissionSetId('')
+      setNoAccess(true)
     }
   }, [existingAssignment, open])
 
@@ -91,7 +95,12 @@ export function AssignTenantSetModal({
   }
 
   const handleSave = () => {
-    if (selectedPermissionSetId) {
+    if (noAccess) {
+      // Remove existing assignment if no access is checked
+      if (existingAssignment) {
+        removeAssignment(tenant.tenantId, group.id, 'Tenant')
+      }
+    } else if (selectedPermissionSetId) {
       const assignment = {
         tenantId: tenant.tenantId,
         aadGroupId: group.id,
@@ -105,9 +114,6 @@ export function AssignTenantSetModal({
       } else {
         addAssignment(assignment)
       }
-    } else if (existingAssignment) {
-      // Remove existing assignment if no permission set selected
-      removeAssignment(tenant.tenantId, group.id, 'Tenant')
     }
 
     onOpenChange(false)
@@ -115,6 +121,7 @@ export function AssignTenantSetModal({
 
   const handleCancel = () => {
     setSelectedPermissionSetId(existingAssignment?.permissionSetId || '')
+    setNoAccess(!existingAssignment)
     onOpenChange(false)
   }
 
@@ -129,7 +136,7 @@ export function AssignTenantSetModal({
         </DialogHeader>
 
         <div className="flex-1 overflow-auto">
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -138,16 +145,47 @@ export function AssignTenantSetModal({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
+                disabled={noAccess}
               />
             </div>
 
+            {/* No Access Option */}
+            <div className="border rounded-lg p-3">
+              <div className="flex items-center space-x-3">
+                <Checkbox
+                  id="no-access"
+                  checked={noAccess}
+                  onCheckedChange={(checked: boolean) => {
+                    setNoAccess(checked)
+                    if (checked) {
+                      setSelectedPermissionSetId('')
+                    }
+                  }}
+                />
+                <Label htmlFor="no-access" className="flex-1 cursor-pointer">
+                  <div className="flex flex-col">
+                    <span className="font-medium text-base">No Access</span>
+                    <span className="text-sm text-muted-foreground">
+                      Remove all permissions for this group
+                    </span>
+                  </div>
+                </Label>
+              </div>
+            </div>
+
             {/* Permission Sets */}
-            <div>
+            <div className="space-y-2">
               <Label className="text-base font-medium">Select Permission Set</Label>
               <RadioGroup
                 value={selectedPermissionSetId}
-                onValueChange={setSelectedPermissionSetId}
-                className="mt-2 space-y-2"
+                onValueChange={(value) => {
+                  setSelectedPermissionSetId(value)
+                  if (value) {
+                    setNoAccess(false)
+                  }
+                }}
+                className="space-y-2"
+                disabled={noAccess}
               >
                 {filteredPermissionSets.map((ps) => {
                   const isExpanded = expandedSets.has(ps.id)
@@ -210,16 +248,6 @@ export function AssignTenantSetModal({
                     </div>
                   )
                 })}
-                
-                {/* No permission set option */}
-                <div className="border rounded-lg p-3 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-start space-x-3">
-                    <RadioGroupItem value="" id="none" className="mt-1" />
-                    <Label htmlFor="none" className="flex-1 cursor-pointer">
-                      <span className="text-muted-foreground">No permission set (remove assignment)</span>
-                    </Label>
-                  </div>
-                </div>
               </RadioGroup>
             </div>
           </div>

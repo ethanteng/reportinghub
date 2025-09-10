@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Table, TableHeader, TableRow, TableHead, TableCell, TableBody } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { 
   getEffectivePermissionSetId, 
@@ -34,11 +35,27 @@ export function ReportAccessMatrix({ tenant, reports }: ReportAccessMatrixProps)
   
   const [overrideModalOpen, setOverrideModalOpen] = useState(false)
   const [selectedCell, setSelectedCell] = useState<{reportId: string, groupId: Guid} | null>(null)
-  const [bulkGroupId, setBulkGroupId] = useState<Guid>('')
+  const [bulkGroupIds, setBulkGroupIds] = useState<Guid[]>([])
   const [bulkPermissionSetId, setBulkPermissionSetId] = useState<string>('')
   const [bulkRlsRole, setBulkRlsRole] = useState<string>('')
+  const [groupsDropdownOpen, setGroupsDropdownOpen] = useState(false)
+  const groupsDropdownRef = useRef<HTMLDivElement>(null)
 
   const psById = new Map(permissionSets.map(ps => [ps.id, ps]))
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (groupsDropdownRef.current && !groupsDropdownRef.current.contains(event.target as Node)) {
+        setGroupsDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   const handleCellClick = (reportId: string, groupId: Guid) => {
     setSelectedCell({ reportId, groupId })
@@ -46,14 +63,14 @@ export function ReportAccessMatrix({ tenant, reports }: ReportAccessMatrixProps)
   }
 
   const handleBulkAssign = () => {
-    if (!bulkGroupId || !bulkPermissionSetId || selectedReports.length === 0) {
-      alert('Please select a group, permission set, and at least one report.')
+    if (bulkGroupIds.length === 0 || !bulkPermissionSetId || selectedReports.length === 0) {
+      alert('Please select at least one group, a permission set, and at least one report.')
       return
     }
 
     // This would be implemented in the store
     console.log('Bulk assign:', {
-      groupId: bulkGroupId,
+      groupIds: bulkGroupIds,
       permissionSetId: bulkPermissionSetId,
       rlsRole: bulkRlsRole || undefined,
       reportIds: selectedReports
@@ -70,6 +87,14 @@ export function ReportAccessMatrix({ tenant, reports }: ReportAccessMatrixProps)
 
   const allReportsSelected = selectedReports.length === reports.length
   const someReportsSelected = selectedReports.length > 0
+
+  const handleGroupToggle = (groupId: Guid) => {
+    setBulkGroupIds(prev => 
+      prev.includes(groupId) 
+        ? prev.filter(id => id !== groupId)
+        : [...prev, groupId]
+    )
+  }
 
   return (
     <>
@@ -99,19 +124,37 @@ export function ReportAccessMatrix({ tenant, reports }: ReportAccessMatrixProps)
               {someReportsSelected && (
                 <>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm">Group:</span>
-                    <Select value={bulkGroupId} onValueChange={setBulkGroupId}>
-                      <SelectTrigger className="w-[200px]">
-                        <SelectValue placeholder="Select group" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {tenant.groups.map(group => (
-                          <SelectItem key={group.id} value={group.id}>
-                            {group.displayName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <span className="text-sm">Groups:</span>
+                    <div className="relative" ref={groupsDropdownRef}>
+                      <div 
+                        className="flex items-center gap-2 min-w-[200px] p-2 border rounded-md bg-background cursor-pointer hover:bg-muted/50"
+                        onClick={() => setGroupsDropdownOpen(!groupsDropdownOpen)}
+                      >
+                        <span className="text-sm text-muted-foreground">
+                          {bulkGroupIds.length === 0 ? 'Select groups' : `${bulkGroupIds.length} selected`}
+                        </span>
+                        <div className="ml-auto text-muted-foreground">
+                          {groupsDropdownOpen ? '▲' : '▼'}
+                        </div>
+                      </div>
+                      {groupsDropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-1 border rounded-md bg-background shadow-lg z-50 max-h-48 overflow-y-auto">
+                          {tenant.groups.map(group => (
+                            <div
+                              key={group.id}
+                              className="flex items-center gap-2 p-2 hover:bg-muted cursor-pointer"
+                              onClick={() => handleGroupToggle(group.id)}
+                            >
+                              <Checkbox
+                                checked={bulkGroupIds.includes(group.id)}
+                                onChange={() => {}} // Handled by parent onClick
+                              />
+                              <span className="text-sm">{group.displayName}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="flex items-center gap-2">

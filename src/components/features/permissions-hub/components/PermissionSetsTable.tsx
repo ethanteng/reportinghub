@@ -31,14 +31,14 @@ export function PermissionSetsTable() {
   const [editingPermissionSet, setEditingPermissionSet] = useState<PermissionSet | null>(null)
 
   const capabilityDefinitions = {
-    allowEditAndSave: { label: 'Edit & Save', icon: Edit3, color: 'bg-blue-100 text-blue-800' },
-    allowEditAndSaveAs: { label: 'Edit & Save As', icon: Save, color: 'bg-green-100 text-green-800' },
-    allowExportReport: { label: 'Export', icon: Download, color: 'bg-purple-100 text-purple-800' },
-    allowSharingReport: { label: 'Share', icon: Share2, color: 'bg-orange-100 text-orange-800' },
-    allowSemanticModelRefresh: { label: 'Model Refresh', icon: RefreshCw, color: 'bg-cyan-100 text-cyan-800' },
-    allowSchedulingTasks: { label: 'Schedule', icon: Mail, color: 'bg-pink-100 text-pink-800' },
-    allowAccessToBIGenius: { label: 'BI Genius', icon: MessageCircle, color: 'bg-indigo-100 text-indigo-800' },
-    allowAccessToBIGeniusQueryDeepDive: { label: 'Query Deep Dive', icon: Code2, color: 'bg-gray-100 text-gray-800' }
+    allowEditAndSave: { label: 'Edit & Save', icon: Edit3, color: 'bg-muted text-muted-foreground' },
+    allowEditAndSaveAs: { label: 'Edit & Save As', icon: Save, color: 'bg-muted text-muted-foreground' },
+    allowExportReport: { label: 'Export', icon: Download, color: 'bg-muted text-muted-foreground' },
+    allowSharingReport: { label: 'Share', icon: Share2, color: 'bg-muted text-muted-foreground' },
+    allowSemanticModelRefresh: { label: 'Model Refresh', icon: RefreshCw, color: 'bg-muted text-muted-foreground' },
+    allowSchedulingTasks: { label: 'Schedule', icon: Mail, color: 'bg-muted text-muted-foreground' },
+    allowAccessToBIGenius: { label: 'BI Genius', icon: MessageCircle, color: 'bg-muted text-muted-foreground' },
+    allowAccessToBIGeniusQueryDeepDive: { label: 'Query Deep Dive', icon: Code2, color: 'bg-muted text-muted-foreground' }
   }
 
   const handleAddNew = () => {
@@ -94,7 +94,7 @@ export function PermissionSetsTable() {
                     <TableCell className="font-medium">{ps.name}</TableCell>
                     <TableCell>{ps.description}</TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-0.5">
                         {Object.entries(ps.capabilities)
                           .filter(([, enabled]) => enabled)
                           .map(([capabilityKey]) => {
@@ -106,9 +106,9 @@ export function PermissionSetsTable() {
                               <Badge 
                                 key={capabilityKey} 
                                 variant="secondary" 
-                                className={`text-xs ${capability.color} border-0`}
+                                className={`text-xs px-1.5 py-0.5 ${capability.color} border-0 font-normal`}
                               >
-                                <IconComponent className="h-3 w-3 mr-1" />
+                                <IconComponent className="h-2.5 w-2.5 mr-1" />
                                 {capability.label}
                               </Badge>
                             )
