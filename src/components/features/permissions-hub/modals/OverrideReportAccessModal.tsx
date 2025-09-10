@@ -60,7 +60,7 @@ export function OverrideReportAccessModal({
     } else {
       setSelectedPermissionSetId('')
       setSelectedRlsRole('none')
-      setNoAccess(false)
+      setNoAccess(true)
     }
   }, [existingAssignment, open])
 
