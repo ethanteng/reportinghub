@@ -41,7 +41,7 @@ export function OverrideReportAccessModal({
   
   const [selectedPermissionSetId, setSelectedPermissionSetId] = useState<string>('')
   const [selectedRlsRole, setSelectedRlsRole] = useState<string>('none')
-  const [revokeAccess, setRevokeAccess] = useState<boolean>(false)
+  const [noAccess, setNoAccess] = useState<boolean>(false)
 
   // Find existing report-level assignment for this group
   const existingAssignment = assignments.find(
@@ -65,7 +65,7 @@ export function OverrideReportAccessModal({
   }, [existingAssignment, open])
 
   const handleSave = () => {
-    if (revokeAccess) {
+    if (noAccess) {
       // Remove existing assignment if revoke access is checked
       if (existingAssignment) {
         removeAssignment(tenant.tenantId, group.id, 'Report', report.id)
@@ -124,7 +124,7 @@ export function OverrideReportAccessModal({
                 }
               }}
               className="space-y-3"
-              disabled={revokeAccess}
+              disabled={noAccess}
             >
               {permissionSets.map((ps) => (
                 <div key={ps.id} className="flex items-start space-x-3">
@@ -151,20 +151,20 @@ export function OverrideReportAccessModal({
             </RadioGroup>
           </div>
 
-          {/* Revoke Access Option */}
+          {/* No Access Option */}
           <div className="flex items-center space-x-2">
             <Checkbox
-              id="revoke-access"
-              checked={revokeAccess}
+              id="no-access"
+              checked={noAccess}
               onCheckedChange={(checked: boolean) => {
-                setRevokeAccess(checked)
+                setNoAccess(checked)
                 if (checked) {
                   setSelectedPermissionSetId('')
                 }
               }}
             />
-            <Label htmlFor="revoke-access" className="text-sm">
-              Revoke access (remove all permissions for this report)
+            <Label htmlFor="no-access" className="text-sm">
+              No access (remove all permissions for this report)
             </Label>
           </div>
 
