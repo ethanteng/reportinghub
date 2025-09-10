@@ -146,6 +146,9 @@ export function ReportAccessMatrix({ tenant, reports }: ReportAccessMatrixProps)
                   <TableHead className="min-w-[220px] sticky left-0 bg-background z-10">
                     Report
                   </TableHead>
+                  <TableHead className="min-w-[100px] sticky left-[220px] bg-background z-10">
+                    Actions
+                  </TableHead>
                   {tenant.groups.map((group) => (
                     <TableHead key={group.id} className="min-w-[150px]">
                       <div className="flex flex-col">
@@ -169,21 +172,20 @@ export function ReportAccessMatrix({ tenant, reports }: ReportAccessMatrixProps)
                           checked={selectedReports.includes(report.id)}
                           onCheckedChange={() => toggleReportSelection(report.id)}
                         />
-                        <div className="flex items-center gap-2 w-full">
-                          <div className="flex flex-col w-48">
-                            <span className="truncate">{report.name}</span>
-                            <span className="text-xs text-muted-foreground truncate">{report.path}</span>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setAuditReportId(report.id)}
-                            className="ml-auto"
-                          >
-                            Audit
-                          </Button>
+                        <div className="flex flex-col">
+                          <span>{report.name}</span>
+                          <span className="text-xs text-muted-foreground">{report.path}</span>
                         </div>
                       </div>
+                    </TableCell>
+                    <TableCell className="sticky left-[220px] bg-background z-10">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAuditReportId(report.id)}
+                      >
+                        Audit
+                      </Button>
                     </TableCell>
                     {tenant.groups.map((group) => {
                       const eff = getEffectivePermissionSetId(tenant.tenantId, group.id, report.id)
