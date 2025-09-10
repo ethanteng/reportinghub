@@ -13,14 +13,15 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
-import { AadGroup, Tenant, PermissionSet } from '@/types/mockAzureAD'
+import { AadGroup, AadUser, Tenant, PermissionSet } from '@/types/mockAzureAD'
 import { usePermissionsStore } from '@/store/usePermissionsStore'
 import { Search, ChevronDown, ChevronRight } from 'lucide-react'
 
 interface AssignTenantSetModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  group: AadGroup
+  group?: AadGroup
+  user?: AadUser
   tenant: Tenant
 }
 
@@ -49,6 +50,7 @@ export function AssignTenantSetModal({
   open, 
   onOpenChange, 
   group, 
+  user,
   tenant 
 }: AssignTenantSetModalProps) {
   const { permissionSets, assignments, addAssignment, updateAssignment, removeAssignment } = usePermissionsStore()
@@ -57,12 +59,42 @@ export function AssignTenantSetModal({
   const [expandedSets, setExpandedSets] = useState<Set<string>>(new Set())
   const [noAccess, setNoAccess] = useState<boolean>(false)
 
-  // Find existing tenant-level assignment for this group
+  // Determine if we're working with a group or user
+  const isUser = !!user
+  const targetId = isUser ? user!.id : group!.id
+  
+  // Find existing tenant-level assignment for this group or user
   const existingAssignment = assignments.find(
     a => a.tenantId === tenant.tenantId && 
-         a.aadGroupId === group.id && 
+         a.aadGroupId === targetId && 
          a.scope === 'Tenant'
   )
+
+  // For users, also check their effective permissions through group membership
+  const getUserEffectivePermissionSet = (userId: string) => {
+    if (!isUser) return null
+    
+    // Find assignments for groups this user belongs to
+    const userGroups = tenant.groups.filter(group => 
+      group.members.some(member => member.id === userId)
+    )
+    
+    const userGroupAssignments = assignments.filter(a => 
+      a.tenantId === tenant.tenantId && 
+      a.scope === 'Tenant' &&
+      userGroups.some(g => g.id === a.aadGroupId)
+    )
+    
+    if (userGroupAssignments.length === 0) return null
+    
+    // For simplicity, return the first assignment's permission set
+    // In a real app, you might want to handle multiple assignments differently
+    const firstAssignment = userGroupAssignments[0]
+    return permissionSets.find(ps => ps.id === firstAssignment.permissionSetId)
+  }
+
+  // Get the effective permission set for users
+  const effectivePermissionSet = isUser ? getUserEffectivePermissionSet(user!.id) : null
 
   // Filter permission sets based on search query
   const filteredPermissionSets = useMemo(() => {
@@ -76,13 +108,19 @@ export function AssignTenantSetModal({
 
   React.useEffect(() => {
     if (existingAssignment) {
+      // Direct assignment exists
       setSelectedPermissionSetId(existingAssignment.permissionSetId)
       setNoAccess(false)
+    } else if (isUser && effectivePermissionSet) {
+      // User has effective permissions through group membership
+      setSelectedPermissionSetId(effectivePermissionSet.id)
+      setNoAccess(false)
     } else {
+      // No permissions
       setSelectedPermissionSetId('')
       setNoAccess(true)
     }
-  }, [existingAssignment, open])
+  }, [existingAssignment, effectivePermissionSet, isUser, open])
 
   const toggleExpanded = (permissionSetId: string) => {
     const newExpanded = new Set(expandedSets)
@@ -98,12 +136,12 @@ export function AssignTenantSetModal({
     if (noAccess) {
       // Remove existing assignment if no access is checked
       if (existingAssignment) {
-        removeAssignment(tenant.tenantId, group.id, 'Tenant')
+        removeAssignment(tenant.tenantId, targetId, 'Tenant')
       }
     } else if (selectedPermissionSetId) {
       const assignment = {
         tenantId: tenant.tenantId,
-        aadGroupId: group.id,
+        aadGroupId: targetId,
         permissionSetId: selectedPermissionSetId,
         scope: 'Tenant' as const,
         inherited: false
@@ -120,8 +158,16 @@ export function AssignTenantSetModal({
   }
 
   const handleCancel = () => {
-    setSelectedPermissionSetId(existingAssignment?.permissionSetId || '')
-    setNoAccess(!existingAssignment)
+    if (existingAssignment) {
+      setSelectedPermissionSetId(existingAssignment.permissionSetId)
+      setNoAccess(false)
+    } else if (isUser && effectivePermissionSet) {
+      setSelectedPermissionSetId(effectivePermissionSet.id)
+      setNoAccess(false)
+    } else {
+      setSelectedPermissionSetId('')
+      setNoAccess(true)
+    }
     onOpenChange(false)
   }
 
@@ -131,7 +177,7 @@ export function AssignTenantSetModal({
         <DialogHeader>
           <DialogTitle>Assign Permission Set</DialogTitle>
           <DialogDescription>
-            Assign a tenant-level permission set to <strong>{group.displayName}</strong>
+            Assign a tenant-level permission set to <strong>{isUser ? user.displayName : group.displayName}</strong>
           </DialogDescription>
         </DialogHeader>
 
