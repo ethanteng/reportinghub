@@ -54,7 +54,6 @@ export function PermissionsHub() {
   // Tenant is now initialized in the store
 
   const currentTenant = currentTenantId ? byTenantId.get(currentTenantId) : null
-  console.log('PermissionsHub render - currentTenantId:', currentTenantId, 'currentTenant:', currentTenant)
 
   if (!currentTenant) {
     return (
@@ -62,9 +61,6 @@ export function PermissionsHub() {
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Permissions Hub</h1>
           <p className="text-muted-foreground">Please select a tenant to continue.</p>
-          <p className="text-sm text-gray-500 mt-2">
-            Debug: currentTenantId = {currentTenantId || 'null'}
-          </p>
         </div>
       </div>
     )
