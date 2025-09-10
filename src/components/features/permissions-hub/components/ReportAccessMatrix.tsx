@@ -164,25 +164,24 @@ export function ReportAccessMatrix({ tenant, reports }: ReportAccessMatrixProps)
                 {reports.map((report) => (
                   <TableRow key={report.id}>
                     <TableCell className="font-medium sticky left-0 bg-background z-10">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={selectedReports.includes(report.id)}
+                          onCheckedChange={() => toggleReportSelection(report.id)}
+                        />
                         <div className="flex items-center gap-2">
-                          <Checkbox
-                            checked={selectedReports.includes(report.id)}
-                            onCheckedChange={() => toggleReportSelection(report.id)}
-                          />
                           <div className="flex flex-col">
                             <span>{report.name}</span>
                             <span className="text-xs text-muted-foreground">{report.path}</span>
                           </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setAuditReportId(report.id)}
+                          >
+                            Audit
+                          </Button>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setAuditReportId(report.id)}
-                          className="ml-2"
-                        >
-                          Audit
-                        </Button>
                       </div>
                     </TableCell>
                     {tenant.groups.map((group) => {
