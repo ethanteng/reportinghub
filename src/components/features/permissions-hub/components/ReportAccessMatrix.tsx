@@ -160,9 +160,11 @@ export function ReportAccessMatrix({ tenant, reports }: ReportAccessMatrixProps)
                     <TableHead key={group.id} className="min-w-[150px]">
                       <div className="flex flex-col">
                         <span className="font-medium">{group.displayName}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {group.groupTypes.includes('Unified') ? 'M365' : 'Security'}
-                        </span>
+                        {group.description && (
+                          <span className="text-xs text-muted-foreground">
+                            {group.description}
+                          </span>
+                        )}
                       </div>
                     </TableHead>
                   ))}
