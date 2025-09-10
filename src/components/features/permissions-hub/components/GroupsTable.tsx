@@ -137,7 +137,7 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
 
     const filteredGroups = fakeGroups.filter(group => 
       group.displayName.toLowerCase().includes(query.toLowerCase()) ||
-      group.description.toLowerCase().includes(query.toLowerCase())
+      (group.description && group.description.toLowerCase().includes(query.toLowerCase()))
     )
 
     const filteredUsers = fakeUsers.filter(user => 
@@ -233,7 +233,9 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                           <div key={group.id} className="flex items-center justify-between p-3 border rounded-lg">
                             <div>
                               <div className="font-medium">{group.displayName}</div>
-                              <div className="text-sm text-muted-foreground">{group.description}</div>
+                              {group.description && (
+                                <div className="text-sm text-muted-foreground">{group.description}</div>
+                              )}
                             </div>
                             <Button
                               size="sm"
