@@ -287,6 +287,10 @@ export const assignments: GroupAssignment[] = [
 
   // Contoso: All Analytics => Viewer (Report level only - no tenant default)
   { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000012"), permissionSetId: "ps_viewer", scope: "Report", targetId: "r_sales", rlsRole: "CountryUS" },
+  { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000012"), permissionSetId: "ps_viewer", scope: "Report", targetId: "r_exec", rlsRole: "LeadershipOnly" },
+  
+  // Contoso: Finance Team => Viewer with RLS roles
+  { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000010"), permissionSetId: "ps_viewer", scope: "Report", targetId: "r_fin", rlsRole: "All" },
 
   // Fabrikam: Sales => Viewer (Tenant level + Report level overrides)
   { tenantId: tenantFabrikam.tenantId, aadGroupId: guid("b1b1b1b1-2222-5555-aaaa-000000000120"), permissionSetId: "ps_viewer", scope: "Tenant" },
