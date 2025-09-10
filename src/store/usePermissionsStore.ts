@@ -47,8 +47,8 @@ interface PermissionsState {
 }
 
 export const usePermissionsStore = create<PermissionsState>((set, get) => ({
-  // Current tenant
-  currentTenantId: null,
+  // Current tenant (initialize with default tenant)
+  currentTenantId: tenantContoso.tenantId,
   setCurrentTenantId: (tenantId) => set({ currentTenantId: tenantId }),
   
   // Permission sets (initialized with mock data)
