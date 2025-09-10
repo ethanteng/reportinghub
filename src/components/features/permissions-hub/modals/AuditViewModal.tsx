@@ -40,33 +40,17 @@ export function AuditViewModal({
     .map(group => {
       const eff = getEffectivePermissionSetId(tenant.tenantId, group.id, report.id)
       const members = resolveTransitiveMembers(tenant, group.id)
-      const guestCount = members.filter(m => m.userPrincipalName.includes('#EXT#')).length
       
       return {
         group,
         effectivePermission: eff,
         memberCount: members.length,
-        guestCount,
         hasAccess: !!eff.permissionSetId
       }
     })
     .filter(item => item.hasAccess)
     .sort((a, b) => b.memberCount - a.memberCount) // Sort by member count
 
-  const getGroupTypeBadge = (group: AadGroup) => {
-    if (group.groupTypes.includes('Unified')) {
-      return <Badge variant="secondary">Microsoft 365</Badge>
-    }
-    return <Badge variant="outline">Security</Badge>
-  }
-
-  const getGroupFeatures = (group: AadGroup) => {
-    const features = []
-    if (group.membershipRule) {
-      features.push(<Badge key="dynamic" variant="secondary">Dynamic</Badge>)
-    }
-    return features
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -107,16 +91,6 @@ export function AuditViewModal({
                     {groupsWithAccess.reduce((sum, item) => sum + item.memberCount, 0)}
                   </strong> total users
                 </div>
-                <div>
-                  <strong>
-                    {groupsWithAccess.reduce((sum, item) => sum + item.guestCount, 0)}
-                  </strong> guest users
-                </div>
-                <div>
-                  <strong>
-                    {groupsWithAccess.filter(item => item.effectivePermission.inheritedFrom === 'Report').length}
-                  </strong> overrides
-                </div>
               </div>
             </div>
 
@@ -127,14 +101,12 @@ export function AuditViewModal({
                 <TableHeader>
                   <TableRow>
                     <TableHead>Group</TableHead>
-                    <TableHead>Type</TableHead>
                     <TableHead>Members</TableHead>
                     <TableHead>Effective Permission</TableHead>
-                    <TableHead>Source</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {groupsWithAccess.map(({ group, effectivePermission, memberCount, guestCount }) => {
+                  {groupsWithAccess.map(({ group, effectivePermission, memberCount }) => {
                     const ps = psById.get(effectivePermission.permissionSetId!)
                     
                     return (
@@ -150,36 +122,11 @@ export function AuditViewModal({
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-col gap-1">
-                            {getGroupTypeBadge(group)}
-                            <div className="flex gap-1">
-                              {getGroupFeatures(group)}
-                            </div>
-                          </div>
+                          <span>{memberCount} total</span>
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-col">
-                            <span>{memberCount} total</span>
-                            {guestCount > 0 && (
-                              <span className="text-xs text-muted-foreground">
-                                {guestCount} guest{guestCount !== 1 ? 's' : ''}
-                              </span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary">
-                              {ps?.name || 'Unknown'}
-                            </Badge>
-                            {/* RLS role would be available from the assignment, not the effective permission */}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={effectivePermission.inheritedFrom === 'Tenant' ? 'outline' : 'default'}
-                          >
-                            {effectivePermission.inheritedFrom === 'Tenant' ? 'Tenant' : 'Override'}
+                          <Badge variant="secondary">
+                            {ps?.name || 'Unknown'}
                           </Badge>
                         </TableCell>
                       </TableRow>
