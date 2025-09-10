@@ -125,9 +125,16 @@ export function AuditViewModal({
                           <span>{memberCount} total</span>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary">
-                            {ps?.name || 'Unknown'}
-                          </Badge>
+                          <div className="flex flex-col gap-1">
+                            <Badge variant="secondary">
+                              {ps?.name || 'Unknown'}
+                            </Badge>
+                            {effectivePermission.rlsRole && (
+                              <span className="text-xs text-muted-foreground">
+                                RLS: {effectivePermission.rlsRole}
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     )
