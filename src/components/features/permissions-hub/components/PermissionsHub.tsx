@@ -53,12 +53,15 @@ export function PermissionsHub() {
 
   // Initialize with default tenant
   useEffect(() => {
+    console.log('PermissionsHub useEffect - currentTenantId:', currentTenantId)
     if (!currentTenantId) {
+      console.log('Setting tenant to:', tenantContoso.tenantId)
       setCurrentTenantId(tenantContoso.tenantId)
     }
   }, [currentTenantId, setCurrentTenantId])
 
   const currentTenant = currentTenantId ? byTenantId.get(currentTenantId) : null
+  console.log('PermissionsHub render - currentTenantId:', currentTenantId, 'currentTenant:', currentTenant)
 
   if (!currentTenant) {
     return (
