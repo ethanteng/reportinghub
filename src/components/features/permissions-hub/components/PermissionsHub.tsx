@@ -24,7 +24,7 @@ import {
   FolderOpen, 
   Users, 
   Palette, 
-  PowerBI, 
+  BarChart3, 
   HelpCircle, 
   MessageCircle, 
   ArrowLeft,
@@ -126,7 +126,7 @@ export function PermissionsHub() {
                 <span className="text-sm">Edit Theme</span>
               </div>
               <div className="flex items-center space-x-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md cursor-pointer">
-                <PowerBI className="h-5 w-5" />
+                <BarChart3 className="h-5 w-5" />
                 <span className="text-sm">Power BI Settings</span>
               </div>
               <div className="flex items-center space-x-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md cursor-pointer">
