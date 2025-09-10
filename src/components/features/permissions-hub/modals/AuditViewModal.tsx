@@ -126,7 +126,7 @@ export function AuditViewModal({
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-1">
-                            <Badge variant="secondary">
+                            <Badge variant="secondary" className="w-fit">
                               {ps?.name || 'Unknown'}
                             </Badge>
                             {effectivePermission.rlsRole && (

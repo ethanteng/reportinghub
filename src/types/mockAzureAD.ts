@@ -331,14 +331,14 @@ export function getEffectivePermissionSetId(
   tenantId: Guid,
   aadGroupId: Guid,
   reportId?: string
-): { permissionSetId?: string; inheritedFrom?: "Tenant" | "Report"; } {
+): { permissionSetId?: string; inheritedFrom?: "Tenant" | "Report"; rlsRole?: string; } {
   // specific report override wins
   const reportOverride = assignments.find(a => a.tenantId === tenantId && a.aadGroupId === aadGroupId && a.scope === "Report" && a.targetId === reportId);
-  if (reportOverride) return { permissionSetId: reportOverride.permissionSetId, inheritedFrom: "Report" };
+  if (reportOverride) return { permissionSetId: reportOverride.permissionSetId, inheritedFrom: "Report", rlsRole: reportOverride.rlsRole };
 
   // tenant-level default
   const tenantDefault = assignments.find(a => a.tenantId === tenantId && a.aadGroupId === aadGroupId && a.scope === "Tenant");
-  if (tenantDefault) return { permissionSetId: tenantDefault.permissionSetId, inheritedFrom: "Tenant" };
+  if (tenantDefault) return { permissionSetId: tenantDefault.permissionSetId, inheritedFrom: "Tenant", rlsRole: tenantDefault.rlsRole };
 
   return { permissionSetId: undefined };
 }
