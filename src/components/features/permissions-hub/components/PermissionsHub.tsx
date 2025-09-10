@@ -63,12 +63,16 @@ export function PermissionsHub() {
         </div>
       </header>
 
-      <Tabs defaultValue="groups" className="space-y-4">
+      <Tabs defaultValue="reports" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="reports">Report Access</TabsTrigger>
           <TabsTrigger value="groups">Users & Groups</TabsTrigger>
           <TabsTrigger value="sets">Permission Sets</TabsTrigger>
-          <TabsTrigger value="reports">Report Access</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="reports">
+          <ReportAccessMatrix tenant={currentTenant} reports={reports} />
+        </TabsContent>
 
         <TabsContent value="groups">
           <GroupsTable tenant={currentTenant} />
@@ -76,10 +80,6 @@ export function PermissionsHub() {
 
         <TabsContent value="sets">
           <PermissionSetsTable />
-        </TabsContent>
-
-        <TabsContent value="reports">
-          <ReportAccessMatrix tenant={currentTenant} reports={reports} />
         </TabsContent>
       </Tabs>
 
