@@ -69,12 +69,7 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                     </TableCell>
                     <TableCell>
                       {ps ? (
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary">{ps.name}</Badge>
-                          <Badge variant="outline">
-                            {eff.inheritedFrom === 'Tenant' ? 'Tenant' : 'Override'}
-                          </Badge>
-                        </div>
+                        <Badge variant="secondary">{ps.name}</Badge>
                       ) : (
                         <span className="text-muted-foreground">Not assigned</span>
                       )}
