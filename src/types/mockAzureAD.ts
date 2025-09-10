@@ -273,20 +273,23 @@ export const reports: ReportRef[] = [
 // ---------- Example Assignments (what your UI will render) ----------
 // Assign at tenant-level by default, then override on a specific report if needed.
 export const assignments: GroupAssignment[] = [
-  // Contoso: Finance Team => Viewer (Report level overrides)
+  // Contoso: Finance Team => Viewer (Tenant level + Report level overrides)
+  { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000010"), permissionSetId: "ps_viewer", scope: "Tenant" },
   { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000010"), permissionSetId: "ps_viewer", scope: "Report", targetId: "r_sales" },
   { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000010"), permissionSetId: "ps_viewer", scope: "Report", targetId: "r_exec" },
   { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000010"), permissionSetId: "ps_editor", scope: "Report", targetId: "r_fin" },
 
-  // Contoso: Executive Leadership => Admin (Report level overrides)
+  // Contoso: Executive Leadership => Admin (Tenant level + Report level overrides)
+  { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000011"), permissionSetId: "ps_admin", scope: "Tenant" },
   { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000011"), permissionSetId: "ps_admin", scope: "Report", targetId: "r_sales" },
   { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000011"), permissionSetId: "ps_admin", scope: "Report", targetId: "r_exec" },
   { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000011"), permissionSetId: "ps_admin", scope: "Report", targetId: "r_fin" },
 
-  // Contoso: All Analytics => Viewer (Report level overrides)
+  // Contoso: All Analytics => Viewer (Report level only - no tenant default)
   { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000012"), permissionSetId: "ps_viewer", scope: "Report", targetId: "r_sales", rlsRole: "CountryUS" },
 
-  // Fabrikam: Sales => Viewer (Report level overrides)
+  // Fabrikam: Sales => Viewer (Tenant level + Report level overrides)
+  { tenantId: tenantFabrikam.tenantId, aadGroupId: guid("b1b1b1b1-2222-5555-aaaa-000000000120"), permissionSetId: "ps_viewer", scope: "Tenant" },
   { tenantId: tenantFabrikam.tenantId, aadGroupId: guid("b1b1b1b1-2222-5555-aaaa-000000000120"), permissionSetId: "ps_viewer", scope: "Report", targetId: "r_sales" },
 ];
 
