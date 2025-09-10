@@ -75,7 +75,7 @@ export function AssignTenantSetModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Assign Permission Set</DialogTitle>
           <DialogDescription>
@@ -83,47 +83,49 @@ export function AssignTenantSetModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div>
-            <Label className="text-base font-medium">Select Permission Set</Label>
-            <RadioGroup
-              value={selectedPermissionSetId}
-              onValueChange={setSelectedPermissionSetId}
-              className="mt-2 space-y-3"
-            >
-              {permissionSets.map((ps) => (
-                <div key={ps.id} className="flex items-start space-x-3">
-                  <RadioGroupItem value={ps.id} id={ps.id} />
-                  <Label htmlFor={ps.id} className="flex-1 cursor-pointer">
-                    <div className="flex flex-col">
-                      <span className="font-medium">{ps.name}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {ps.description}
-                      </span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {Object.entries(ps.capabilities)
-                          .filter(([, enabled]) => enabled)
-                          .map(([capability]) => (
-                            <Badge key={capability} variant="secondary" className="text-xs">
-                              {capability}
-                            </Badge>
-                          ))}
+        <div className="flex-1 overflow-auto">
+          <div className="space-y-4">
+            <div>
+              <Label className="text-base font-medium">Select Permission Set</Label>
+              <RadioGroup
+                value={selectedPermissionSetId}
+                onValueChange={setSelectedPermissionSetId}
+                className="mt-2 space-y-3"
+              >
+                {permissionSets.map((ps) => (
+                  <div key={ps.id} className="flex items-start space-x-3">
+                    <RadioGroupItem value={ps.id} id={ps.id} />
+                    <Label htmlFor={ps.id} className="flex-1 cursor-pointer">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{ps.name}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {ps.description}
+                        </span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {Object.entries(ps.capabilities)
+                            .filter(([, enabled]) => enabled)
+                            .map(([capability]) => (
+                              <Badge key={capability} variant="secondary" className="text-xs">
+                                {capability}
+                              </Badge>
+                            ))}
+                        </div>
                       </div>
-                    </div>
+                    </Label>
+                  </div>
+                ))}
+                <div className="flex items-start space-x-3">
+                  <RadioGroupItem value="" id="none" />
+                  <Label htmlFor="none" className="flex-1 cursor-pointer">
+                    <span className="text-muted-foreground">No permission set (remove assignment)</span>
                   </Label>
                 </div>
-              ))}
-              <div className="flex items-start space-x-3">
-                <RadioGroupItem value="" id="none" />
-                <Label htmlFor="none" className="flex-1 cursor-pointer">
-                  <span className="text-muted-foreground">No permission set (remove assignment)</span>
-                </Label>
-              </div>
-            </RadioGroup>
+              </RadioGroup>
+            </div>
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0">
           <Button variant="outline" onClick={handleCancel}>
             Cancel
           </Button>

@@ -103,7 +103,7 @@ export function OverrideReportAccessModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Change Report Access</DialogTitle>
           <DialogDescription>
@@ -111,7 +111,8 @@ export function OverrideReportAccessModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="flex-1 overflow-auto">
+          <div className="space-y-6">
           {/* Permission Set Selection */}
           <div className="space-y-3">
             <Label className="text-base font-medium">Select Permission Set</Label>
@@ -187,9 +188,10 @@ export function OverrideReportAccessModal({
               </Select>
             </div>
           )}
+          </div>
         </div>
 
-        <DialogFooter className="flex justify-end gap-2">
+        <DialogFooter className="flex justify-end gap-2 flex-shrink-0">
           <Button variant="outline" onClick={handleCancel}>
             Cancel
           </Button>

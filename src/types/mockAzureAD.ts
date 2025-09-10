@@ -43,7 +43,7 @@ export interface Tenant {
 }
 
 // ---------- ReportingHub-side concepts ----------
-export type PermissionLevel = "Viewer" | "Editor" | "Admin";
+export type PermissionLevel = "Viewer" | "Editor" | "Admin" | "Finance Analyst" | "Executive Dashboard" | "Data Scientist" | "Guest Limited" | "Marketing Team" | "Audit Read-Only";
 
 export interface PermissionSet {
   id: string;
@@ -261,6 +261,97 @@ export const permissionSets: PermissionSet[] = [
       allowAccessToBIGeniusQueryDeepDive: true 
     },
   },
+  // Custom user-created permission sets
+  {
+    id: "ps_finance_analyst",
+    name: "Finance Analyst",
+    description: "Custom role for finance team members with export and sharing capabilities",
+    capabilities: { 
+      allowEditAndSave: false, 
+      allowEditAndSaveAs: true, 
+      allowExportReport: true, 
+      allowSharingReport: true, 
+      allowSemanticModelRefresh: false, 
+      allowSchedulingTasks: true, 
+      allowAccessToBIGenius: true, 
+      allowAccessToBIGeniusQueryDeepDive: false 
+    },
+  },
+  {
+    id: "ps_executive_dashboard",
+    name: "Executive Dashboard",
+    description: "Read-only access for executives with scheduled reports and BI Genius",
+    capabilities: { 
+      allowEditAndSave: false, 
+      allowEditAndSaveAs: false, 
+      allowExportReport: true, 
+      allowSharingReport: false, 
+      allowSemanticModelRefresh: false, 
+      allowSchedulingTasks: true, 
+      allowAccessToBIGenius: true, 
+      allowAccessToBIGeniusQueryDeepDive: true 
+    },
+  },
+  {
+    id: "ps_data_scientist",
+    name: "Data Scientist",
+    description: "Advanced analytics capabilities for data science team",
+    capabilities: { 
+      allowEditAndSave: true, 
+      allowEditAndSaveAs: true, 
+      allowExportReport: true, 
+      allowSharingReport: true, 
+      allowSemanticModelRefresh: true, 
+      allowSchedulingTasks: false, 
+      allowAccessToBIGenius: true, 
+      allowAccessToBIGeniusQueryDeepDive: true 
+    },
+  },
+  {
+    id: "ps_guest_limited",
+    name: "Guest Limited",
+    description: "Minimal access for external guests and contractors",
+    capabilities: { 
+      allowEditAndSave: false, 
+      allowEditAndSaveAs: false, 
+      allowExportReport: false, 
+      allowSharingReport: false, 
+      allowSemanticModelRefresh: false, 
+      allowSchedulingTasks: false, 
+      allowAccessToBIGenius: false, 
+      allowAccessToBIGeniusQueryDeepDive: false 
+    },
+  },
+  {
+    id: "ps_marketing_team",
+    name: "Marketing Team",
+    description: "Custom permissions for marketing team with sharing and export rights",
+    capabilities: { 
+      allowEditAndSave: true, 
+      allowEditAndSaveAs: true, 
+      allowExportReport: true, 
+      allowSharingReport: true, 
+      allowSemanticModelRefresh: false, 
+      allowSchedulingTasks: true, 
+      allowAccessToBIGenius: false, 
+      allowAccessToBIGeniusQueryDeepDive: false 
+    },
+  },
+  {
+    id: "ps_audit_readonly",
+    name: "Audit Read-Only",
+    description: "Strict read-only access for compliance and audit purposes",
+    capabilities: { 
+      allowEditAndSave: false, 
+      allowEditAndSaveAs: false, 
+      allowExportReport: true, 
+      allowSharingReport: false, 
+      allowSemanticModelRefresh: false, 
+      allowSchedulingTasks: false, 
+      allowAccessToBIGenius: false, 
+      allowAccessToBIGeniusQueryDeepDive: false 
+    },
+  },
 ];
 
 // ---------- Reports (for the matrix / audit view) ----------
@@ -295,6 +386,25 @@ export const assignments: GroupAssignment[] = [
   // Fabrikam: Sales => Viewer (Tenant level + Report level overrides)
   { tenantId: tenantFabrikam.tenantId, aadGroupId: guid("b1b1b1b1-2222-5555-aaaa-000000000120"), permissionSetId: "ps_viewer", scope: "Tenant" },
   { tenantId: tenantFabrikam.tenantId, aadGroupId: guid("b1b1b1b1-2222-5555-aaaa-000000000120"), permissionSetId: "ps_viewer", scope: "Report", targetId: "r_sales" },
+
+  // Custom permission set assignments
+  // Finance Team using Finance Analyst role
+  { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000010"), permissionSetId: "ps_finance_analyst", scope: "Report", targetId: "r_fin" },
+  
+  // Executive Leadership using Executive Dashboard role
+  { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000011"), permissionSetId: "ps_executive_dashboard", scope: "Report", targetId: "r_exec" },
+  
+  // All Analytics using Data Scientist role for some reports
+  { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000012"), permissionSetId: "ps_data_scientist", scope: "Report", targetId: "r_sales" },
+  
+  // External Guests using Guest Limited role
+  { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000013"), permissionSetId: "ps_guest_limited", scope: "Tenant" },
+  
+  // Marketing Team using Marketing Team role
+  { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000014"), permissionSetId: "ps_marketing_team", scope: "Tenant" },
+  
+  // Audit team using Audit Read-Only role
+  { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000015"), permissionSetId: "ps_audit_readonly", scope: "Tenant" },
 ];
 
 // ---------- Helper: resolve transitive membership (users of a group) ----------

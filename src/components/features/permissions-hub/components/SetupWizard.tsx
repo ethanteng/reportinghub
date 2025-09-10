@@ -109,20 +109,6 @@ export function SetupWizard({ open, onOpenChange, tenant }: SetupWizardProps) {
     }
   }
 
-  const getGroupTypeBadge = (group: AadGroup) => {
-    if (group.groupTypes.includes('Unified')) {
-      return <Badge variant="secondary">Microsoft 365</Badge>
-    }
-    return <Badge variant="outline">Security</Badge>
-  }
-
-  const getGroupFeatures = (group: AadGroup) => {
-    const features = []
-    if (group.membershipRule) {
-      features.push(<Badge key="dynamic" variant="secondary">Dynamic</Badge>)
-    }
-    return features
-  }
 
   const renderStep1 = () => (
     <div className="space-y-4">
@@ -144,10 +130,6 @@ export function SetupWizard({ open, onOpenChange, tenant }: SetupWizardProps) {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-medium">{group.displayName}</span>
-                    {getGroupTypeBadge(group)}
-                    <div className="flex gap-1">
-                      {getGroupFeatures(group)}
-                    </div>
                   </div>
                   {group.description && (
                     <p className="text-sm text-muted-foreground">
@@ -177,7 +159,6 @@ export function SetupWizard({ open, onOpenChange, tenant }: SetupWizardProps) {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{group.displayName}</span>
-                  {getGroupTypeBadge(group)}
                 </div>
               </CardHeader>
               <CardContent>

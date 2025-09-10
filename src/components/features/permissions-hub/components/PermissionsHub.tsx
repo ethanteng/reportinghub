@@ -54,12 +54,13 @@ export function PermissionsHub() {
         </div>
         <div className="flex items-center gap-4">
           <TenantSwitcher />
-          <Button 
-            variant="outline" 
+          {/* Setup Wizard button temporarily hidden */}
+          {/* <Button 
+            variant="outline"
             onClick={() => setSetupWizardOpen(true)}
           >
             Setup Wizard
-          </Button>
+          </Button> */}
         </div>
       </header>
 
