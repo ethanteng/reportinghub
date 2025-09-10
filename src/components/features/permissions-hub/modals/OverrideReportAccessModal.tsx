@@ -56,11 +56,11 @@ export function OverrideReportAccessModal({
     if (existingAssignment) {
       setSelectedPermissionSetId(existingAssignment.permissionSetId)
       setSelectedRlsRole(existingAssignment.rlsRole || 'none')
-      setRevokeAccess(false)
+      setNoAccess(false)
     } else {
       setSelectedPermissionSetId('')
       setSelectedRlsRole('none')
-      setRevokeAccess(false)
+      setNoAccess(false)
     }
   }, [existingAssignment, open])
 
@@ -95,7 +95,7 @@ export function OverrideReportAccessModal({
   const handleCancel = () => {
     setSelectedPermissionSetId(existingAssignment?.permissionSetId || '')
     setSelectedRlsRole(existingAssignment?.rlsRole || 'none')
-    setRevokeAccess(false)
+    setNoAccess(false)
     onOpenChange(false)
   }
 
@@ -120,7 +120,7 @@ export function OverrideReportAccessModal({
               onValueChange={(value) => {
                 setSelectedPermissionSetId(value)
                 if (value) {
-                  setRevokeAccess(false)
+                  setNoAccess(false)
                 }
               }}
               className="space-y-3"
