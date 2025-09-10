@@ -116,16 +116,9 @@ export function PermissionSetsTable() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">
-                          {usage} assignment{usage !== 1 ? 's' : ''}
-                        </span>
-                        {inUse && (
-                          <Badge variant="outline" className="text-xs">
-                            In Use
-                          </Badge>
-                        )}
-                      </div>
+                      <span className="text-sm">
+                        {usage} assignment{usage !== 1 ? 's' : ''}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
