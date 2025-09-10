@@ -49,12 +49,6 @@ export function OverrideReportAccessModal({
          a.targetId === report.id
   )
 
-  // Find tenant-level assignment for inheritance reference
-  const tenantAssignment = assignments.find(
-    a => a.tenantId === tenant.tenantId && 
-         a.aadGroupId === group.id && 
-         a.scope === 'Tenant'
-  )
 
   useEffect(() => {
     if (existingAssignment) {
@@ -91,12 +85,6 @@ export function OverrideReportAccessModal({
     onOpenChange(false)
   }
 
-  const handleClearOverride = () => {
-    if (existingAssignment) {
-      removeAssignment(tenant.tenantId, group.id, 'Report', report.id)
-    }
-    onOpenChange(false)
-  }
 
   const handleCancel = () => {
     setSelectedPermissionSetId(existingAssignment?.permissionSetId || '')
@@ -110,28 +98,13 @@ export function OverrideReportAccessModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Override Report Access</DialogTitle>
+          <DialogTitle>Change Report Access</DialogTitle>
           <DialogDescription>
-            Override access for <strong>{group.displayName}</strong> to <strong>{report.name}</strong>
+            Change access for <strong>{group.displayName}</strong> to <strong>{report.name}</strong>
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Current Inheritance Info */}
-          {tenantAssignment && (
-            <div className="p-3 bg-muted rounded-lg">
-              <h4 className="font-medium text-sm mb-2">Current Tenant-Level Assignment</h4>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">
-                  {psById.get(tenantAssignment.permissionSetId)?.name || 'Unknown'}
-                </Badge>
-                <span className="text-sm text-muted-foreground">
-                  (inherited from tenant)
-                </span>
-              </div>
-            </div>
-          )}
-
           {/* Permission Set Selection */}
           <div className="space-y-3">
             <Label className="text-base font-medium">Select Permission Set</Label>
@@ -162,12 +135,6 @@ export function OverrideReportAccessModal({
                   </Label>
                 </div>
               ))}
-              <div className="flex items-start space-x-3">
-                <RadioGroupItem value="" id="none" />
-                <Label htmlFor="none" className="flex-1 cursor-pointer">
-                  <span className="text-muted-foreground">Clear override (use tenant inheritance)</span>
-                </Label>
-              </div>
             </RadioGroup>
           </div>
 
@@ -192,22 +159,13 @@ export function OverrideReportAccessModal({
           )}
         </div>
 
-        <DialogFooter className="flex justify-between">
-          <div>
-            {existingAssignment && (
-              <Button variant="outline" onClick={handleClearOverride}>
-                Clear Override
-              </Button>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleCancel}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave}>
-              Save Changes
-            </Button>
-          </div>
+        <DialogFooter className="flex justify-end gap-2">
+          <Button variant="outline" onClick={handleCancel}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave}>
+            Save Changes
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
