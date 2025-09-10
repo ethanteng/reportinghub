@@ -75,17 +75,7 @@ export function ReportAccessMatrix({ tenant, reports }: ReportAccessMatrixProps)
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Report Access Matrix</h3>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setAuditReportId(auditReportId ? null : reports[0]?.id || null)}
-              >
-                {auditReportId ? 'Close Audit' : 'Audit View'}
-              </Button>
-            </div>
-          </div>
+          <h3 className="text-lg font-semibold">Report Access Matrix</h3>
         </CardHeader>
         <CardContent>
           {/* Bulk Actions Bar */}
@@ -174,15 +164,25 @@ export function ReportAccessMatrix({ tenant, reports }: ReportAccessMatrixProps)
                 {reports.map((report) => (
                   <TableRow key={report.id}>
                     <TableCell className="font-medium sticky left-0 bg-background z-10">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          checked={selectedReports.includes(report.id)}
-                          onCheckedChange={() => toggleReportSelection(report.id)}
-                        />
-                        <div className="flex flex-col">
-                          <span>{report.name}</span>
-                          <span className="text-xs text-muted-foreground">{report.path}</span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={selectedReports.includes(report.id)}
+                            onCheckedChange={() => toggleReportSelection(report.id)}
+                          />
+                          <div className="flex flex-col">
+                            <span>{report.name}</span>
+                            <span className="text-xs text-muted-foreground">{report.path}</span>
+                          </div>
                         </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setAuditReportId(report.id)}
+                          className="ml-2"
+                        >
+                          Audit
+                        </Button>
                       </div>
                     </TableCell>
                     {tenant.groups.map((group) => {
