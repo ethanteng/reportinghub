@@ -196,6 +196,14 @@ This prototype is designed to be easily extended with:
 - Component-based architecture
 - Custom hooks for reusable logic
 
+## 🚀 Deployment
+
+This project is automatically deployed to Vercel on every push to the `main` branch.
+
+- **Live URL**: https://reportinghub-d6te0a28y-ethan-tengs-projects-f09c66fd.vercel.app
+- **Status**: ✅ Auto-deployment enabled
+- **Last Deployed**: $(date)
+
 ## License
 
 This project is a prototype for demonstration purposes.
