@@ -7,6 +7,16 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { usePermissionsStore, getPermissionSetUsage, isPermissionSetInUse } from '@/store/usePermissionsStore'
 import { EditPermissionSetModal } from '../modals/EditPermissionSetModal'
 import { PermissionSet } from '@/types/mockAzureAD'
+import { 
+  Edit3, 
+  Save, 
+  Download, 
+  Share2, 
+  RefreshCw, 
+  Mail, 
+  MessageCircle, 
+  Code2
+} from 'lucide-react'
 
 export function PermissionSetsTable() {
   const { 
@@ -19,6 +29,17 @@ export function PermissionSetsTable() {
   
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [editingPermissionSet, setEditingPermissionSet] = useState<PermissionSet | null>(null)
+
+  const capabilityDefinitions = {
+    allowEditAndSave: { label: 'Edit & Save', icon: Edit3, color: 'bg-blue-100 text-blue-800' },
+    allowEditAndSaveAs: { label: 'Edit & Save As', icon: Save, color: 'bg-green-100 text-green-800' },
+    allowExportReport: { label: 'Export', icon: Download, color: 'bg-purple-100 text-purple-800' },
+    allowSharingReport: { label: 'Share', icon: Share2, color: 'bg-orange-100 text-orange-800' },
+    allowSemanticModelRefresh: { label: 'Model Refresh', icon: RefreshCw, color: 'bg-cyan-100 text-cyan-800' },
+    allowSchedulingTasks: { label: 'Schedule', icon: Mail, color: 'bg-pink-100 text-pink-800' },
+    allowAccessToBIGenius: { label: 'BI Genius', icon: MessageCircle, color: 'bg-indigo-100 text-indigo-800' },
+    allowAccessToBIGeniusQueryDeepDive: { label: 'Query Deep Dive', icon: Code2, color: 'bg-gray-100 text-gray-800' }
+  }
 
   const handleAddNew = () => {
     setEditingPermissionSet(null)
@@ -76,11 +97,22 @@ export function PermissionSetsTable() {
                       <div className="flex flex-wrap gap-1">
                         {Object.entries(ps.capabilities)
                           .filter(([, enabled]) => enabled)
-                          .map(([capability]) => (
-                            <Badge key={capability} variant="secondary" className="text-xs">
-                              {capability}
-                            </Badge>
-                          ))}
+                          .map(([capabilityKey]) => {
+                            const capability = capabilityDefinitions[capabilityKey as keyof typeof capabilityDefinitions]
+                            if (!capability) return null
+                            
+                            const IconComponent = capability.icon
+                            return (
+                              <Badge 
+                                key={capabilityKey} 
+                                variant="secondary" 
+                                className={`text-xs ${capability.color} border-0`}
+                              >
+                                <IconComponent className="h-3 w-3 mr-1" />
+                                {capability.label}
+                              </Badge>
+                            )
+                          })}
                       </div>
                     </TableCell>
                     <TableCell>

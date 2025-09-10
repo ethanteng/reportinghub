@@ -49,12 +49,16 @@ export interface PermissionSet {
   id: string;
   name: PermissionLevel;
   description: string;
-  // in a real app, break this down by capability flags
+  // Power BI capabilities based on actual permission options
   capabilities: {
-    viewReports: boolean;
-    managePermissions: boolean;
-    manageContentPages: boolean;
-    exportData: boolean;
+    allowEditAndSave: boolean;
+    allowEditAndSaveAs: boolean;
+    allowExportReport: boolean;
+    allowSharingReport: boolean;
+    allowSemanticModelRefresh: boolean;
+    allowSchedulingTasks: boolean;
+    allowAccessToBIGenius: boolean;
+    allowAccessToBIGeniusQueryDeepDive: boolean;
   };
 }
 
@@ -216,19 +220,46 @@ export const permissionSets: PermissionSet[] = [
     id: "ps_viewer",
     name: "Viewer",
     description: "Read-only access to reports",
-    capabilities: { viewReports: true, managePermissions: false, manageContentPages: false, exportData: true },
+    capabilities: { 
+      allowEditAndSave: false, 
+      allowEditAndSaveAs: false, 
+      allowExportReport: true, 
+      allowSharingReport: true, 
+      allowSemanticModelRefresh: false, 
+      allowSchedulingTasks: false, 
+      allowAccessToBIGenius: false, 
+      allowAccessToBIGeniusQueryDeepDive: false 
+    },
   },
   {
     id: "ps_editor",
     name: "Editor",
     description: "View and customize reports (no tenant-level admin)",
-    capabilities: { viewReports: true, managePermissions: false, manageContentPages: true, exportData: true },
+    capabilities: { 
+      allowEditAndSave: true, 
+      allowEditAndSaveAs: true, 
+      allowExportReport: true, 
+      allowSharingReport: true, 
+      allowSemanticModelRefresh: false, 
+      allowSchedulingTasks: false, 
+      allowAccessToBIGenius: false, 
+      allowAccessToBIGeniusQueryDeepDive: false 
+    },
   },
   {
     id: "ps_admin",
     name: "Admin",
     description: "Full admin, including permissions management",
-    capabilities: { viewReports: true, managePermissions: true, manageContentPages: true, exportData: true },
+    capabilities: { 
+      allowEditAndSave: true, 
+      allowEditAndSaveAs: true, 
+      allowExportReport: true, 
+      allowSharingReport: true, 
+      allowSemanticModelRefresh: true, 
+      allowSchedulingTasks: true, 
+      allowAccessToBIGenius: true, 
+      allowAccessToBIGeniusQueryDeepDive: true 
+    },
   },
 ];
 
