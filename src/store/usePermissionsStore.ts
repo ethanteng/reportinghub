@@ -6,7 +6,7 @@ import {
   ReportRef, 
   Guid 
 } from '@/types/mockAzureAD'
-import { permissionSets as mockPermissionSets, assignments as mockAssignments } from '@/types/mockAzureAD'
+import { permissionSets as mockPermissionSets, assignments as mockAssignments, tenantContoso } from '@/types/mockAzureAD'
 
 interface PermissionsState {
   // Current tenant
