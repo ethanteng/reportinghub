@@ -177,7 +177,7 @@ export function AssignTenantSetModal({
         <DialogHeader>
           <DialogTitle>Assign Permission Set</DialogTitle>
           <DialogDescription>
-            Assign a tenant-level permission set to <strong>{isUser ? user.displayName : group.displayName}</strong>
+            Assign a tenant-level permission set to <strong>{isUser ? user?.displayName : group?.displayName}</strong>
           </DialogDescription>
         </DialogHeader>
 
@@ -279,7 +279,7 @@ export function AssignTenantSetModal({
                                     </span>
                                     <div className="flex flex-wrap gap-1">
                                       {permissions.map((permission) => (
-                                        <Badge key={permission} variant="blue" className="text-xs">
+                                        <Badge key={permission} variant="default" className="text-xs">
                                           {permission}
                                         </Badge>
                                       ))}

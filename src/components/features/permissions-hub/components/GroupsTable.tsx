@@ -434,8 +434,8 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
         <AssignTenantSetModal
           open={assignModalOpen}
           onOpenChange={setAssignModalOpen}
-          group={selectedGroup}
-          user={selectedUser}
+          group={selectedGroup || undefined}
+          user={selectedUser || undefined}
           tenant={tenant}
         />
       )}

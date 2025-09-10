@@ -254,7 +254,7 @@ export function OverrideReportAccessModal({
                                     </span>
                                     <div className="flex flex-wrap gap-1">
                                       {permissions.map((permission) => (
-                                        <Badge key={permission} variant="blue" className="text-xs">
+                                        <Badge key={permission} variant="default" className="text-xs">
                                           {permission}
                                         </Badge>
                                       ))}
