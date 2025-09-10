@@ -1,0 +1,202 @@
+import React from 'react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Table, TableHeader, TableRow, TableHead, TableCell, TableBody } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { 
+  getEffectivePermissionSetId, 
+  resolveTransitiveMembers,
+  Tenant, 
+  ReportRef, 
+  AadGroup 
+} from '@/types/mockAzureAD'
+import { usePermissionsStore } from '@/store/usePermissionsStore'
+
+interface AuditViewModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  report: ReportRef
+  tenant: Tenant
+}
+
+export function AuditViewModal({ 
+  open, 
+  onOpenChange, 
+  report, 
+  tenant 
+}: AuditViewModalProps) {
+  const { permissionSets, assignments } = usePermissionsStore()
+  
+  const psById = new Map(permissionSets.map(ps => [ps.id, ps]))
+
+  // Get all groups that have access to this report
+  const groupsWithAccess = tenant.groups
+    .map(group => {
+      const eff = getEffectivePermissionSetId(tenant.tenantId, group.id, report.id)
+      const members = resolveTransitiveMembers(tenant, group.id)
+      const guestCount = members.filter(m => m.userPrincipalName.includes('#EXT#')).length
+      
+      return {
+        group,
+        effectivePermission: eff,
+        memberCount: members.length,
+        guestCount,
+        hasAccess: !!eff.permissionSetId
+      }
+    })
+    .filter(item => item.hasAccess)
+    .sort((a, b) => b.memberCount - a.memberCount) // Sort by member count
+
+  const getGroupTypeBadge = (group: AadGroup) => {
+    if (group.groupTypes.includes('Unified')) {
+      return <Badge variant="secondary">Microsoft 365</Badge>
+    }
+    return <Badge variant="outline">Security</Badge>
+  }
+
+  const getGroupFeatures = (group: AadGroup) => {
+    const features = []
+    if (group.membershipRule) {
+      features.push(<Badge key="dynamic" variant="secondary">Dynamic</Badge>)
+    }
+    return features
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Audit: Who can access "{report.name}"?</DialogTitle>
+          <DialogDescription>
+            Groups and users with access to this report, including their effective permissions and inheritance source.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-auto">
+          <div className="space-y-4">
+            {/* Report Info */}
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-medium mb-2">Report Details</h4>
+              <div className="space-y-1 text-sm">
+                <div><strong>Name:</strong> {report.name}</div>
+                <div><strong>Path:</strong> {report.path}</div>
+                {report.dataset && <div><strong>Dataset:</strong> {report.dataset}</div>}
+                {report.rlsRoles && report.rlsRoles.length > 0 && (
+                  <div>
+                    <strong>Available RLS Roles:</strong> {report.rlsRoles.join(', ')}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Access Summary */}
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-medium mb-2">Access Summary</h4>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <strong>{groupsWithAccess.length}</strong> groups have access
+                </div>
+                <div>
+                  <strong>
+                    {groupsWithAccess.reduce((sum, item) => sum + item.memberCount, 0)}
+                  </strong> total users
+                </div>
+                <div>
+                  <strong>
+                    {groupsWithAccess.reduce((sum, item) => sum + item.guestCount, 0)}
+                  </strong> guest users
+                </div>
+                <div>
+                  <strong>
+                    {groupsWithAccess.filter(item => item.effectivePermission.inheritedFrom === 'Report').length}
+                  </strong> overrides
+                </div>
+              </div>
+            </div>
+
+            {/* Groups Table */}
+            <div>
+              <h4 className="font-medium mb-3">Groups with Access</h4>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Group</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Members</TableHead>
+                    <TableHead>Effective Permission</TableHead>
+                    <TableHead>Source</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {groupsWithAccess.map(({ group, effectivePermission, memberCount, guestCount }) => {
+                    const ps = psById.get(effectivePermission.permissionSetId!)
+                    
+                    return (
+                      <TableRow key={group.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex flex-col">
+                            <span>{group.displayName}</span>
+                            {group.description && (
+                              <span className="text-xs text-muted-foreground">
+                                {group.description}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            {getGroupTypeBadge(group)}
+                            <div className="flex gap-1">
+                              {getGroupFeatures(group)}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span>{memberCount} total</span>
+                            {guestCount > 0 && (
+                              <span className="text-xs text-muted-foreground">
+                                {guestCount} guest{guestCount !== 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary">
+                              {ps?.name || 'Unknown'}
+                            </Badge>
+                            {/* RLS role would be available from the assignment, not the effective permission */}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={effectivePermission.inheritedFrom === 'Tenant' ? 'outline' : 'default'}
+                          >
+                            {effectivePermission.inheritedFrom === 'Tenant' ? 'Tenant' : 'Override'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end pt-4 border-t">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
