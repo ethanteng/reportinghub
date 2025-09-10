@@ -188,23 +188,17 @@ export function ReportAccessMatrix({ tenant, reports }: ReportAccessMatrixProps)
                     {tenant.groups.map((group) => {
                       const eff = getEffectivePermissionSetId(tenant.tenantId, group.id, report.id)
                       const ps = eff.permissionSetId ? psById.get(eff.permissionSetId) : null
-                      const isInherited = eff.inheritedFrom === 'Tenant'
                       
                       return (
                         <TableCell key={`${report.id}-${group.id}`}>
                           {ps ? (
-                            <div className="flex items-center gap-2">
-                              <Badge 
-                                variant={isInherited ? "secondary" : "default"}
-                                className="cursor-pointer hover:bg-opacity-80"
-                                onClick={() => handleCellClick(report.id, group.id)}
-                              >
-                                {ps.name}
-                              </Badge>
-                              <Badge variant="outline" className="text-xs">
-                                {isInherited ? 'Inherited' : 'Override'}
-                              </Badge>
-                            </div>
+                            <Badge 
+                              variant="secondary"
+                              className="cursor-pointer hover:bg-opacity-80"
+                              onClick={() => handleCellClick(report.id, group.id)}
+                            >
+                              {ps.name}
+                            </Badge>
                           ) : (
                             <Button
                               variant="outline"
@@ -212,7 +206,7 @@ export function ReportAccessMatrix({ tenant, reports }: ReportAccessMatrixProps)
                               onClick={() => handleCellClick(report.id, group.id)}
                               className="text-muted-foreground"
                             >
-                              Override
+                              Assign
                             </Button>
                           )}
                         </TableCell>
