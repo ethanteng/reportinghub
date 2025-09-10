@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AadGroup, Tenant, ReportRef } from '@/types/mockAzureAD'
 import { usePermissionsStore } from '@/store/usePermissionsStore'
@@ -40,6 +41,7 @@ export function OverrideReportAccessModal({
   
   const [selectedPermissionSetId, setSelectedPermissionSetId] = useState<string>('')
   const [selectedRlsRole, setSelectedRlsRole] = useState<string>('none')
+  const [revokeAccess, setRevokeAccess] = useState<boolean>(false)
 
   // Find existing report-level assignment for this group
   const existingAssignment = assignments.find(
@@ -54,14 +56,21 @@ export function OverrideReportAccessModal({
     if (existingAssignment) {
       setSelectedPermissionSetId(existingAssignment.permissionSetId)
       setSelectedRlsRole(existingAssignment.rlsRole || 'none')
+      setRevokeAccess(false)
     } else {
       setSelectedPermissionSetId('')
       setSelectedRlsRole('none')
+      setRevokeAccess(false)
     }
   }, [existingAssignment, open])
 
   const handleSave = () => {
-    if (selectedPermissionSetId) {
+    if (revokeAccess) {
+      // Remove existing assignment if revoke access is checked
+      if (existingAssignment) {
+        removeAssignment(tenant.tenantId, group.id, 'Report', report.id)
+      }
+    } else if (selectedPermissionSetId) {
       const assignment = {
         tenantId: tenant.tenantId,
         aadGroupId: group.id,
@@ -77,9 +86,6 @@ export function OverrideReportAccessModal({
       } else {
         addAssignment(assignment)
       }
-    } else if (existingAssignment) {
-      // Remove existing assignment if no permission set selected
-      removeAssignment(tenant.tenantId, group.id, 'Report', report.id)
     }
 
     onOpenChange(false)
@@ -88,7 +94,8 @@ export function OverrideReportAccessModal({
 
   const handleCancel = () => {
     setSelectedPermissionSetId(existingAssignment?.permissionSetId || '')
-    setSelectedRlsRole(existingAssignment?.rlsRole || '')
+    setSelectedRlsRole(existingAssignment?.rlsRole || 'none')
+    setRevokeAccess(false)
     onOpenChange(false)
   }
 
@@ -110,8 +117,14 @@ export function OverrideReportAccessModal({
             <Label className="text-base font-medium">Select Permission Set</Label>
             <RadioGroup
               value={selectedPermissionSetId}
-              onValueChange={setSelectedPermissionSetId}
+              onValueChange={(value) => {
+                setSelectedPermissionSetId(value)
+                if (value) {
+                  setRevokeAccess(false)
+                }
+              }}
               className="space-y-3"
+              disabled={revokeAccess}
             >
               {permissionSets.map((ps) => (
                 <div key={ps.id} className="flex items-start space-x-3">
@@ -136,6 +149,23 @@ export function OverrideReportAccessModal({
                 </div>
               ))}
             </RadioGroup>
+          </div>
+
+          {/* Revoke Access Option */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="revoke-access"
+              checked={revokeAccess}
+              onCheckedChange={(checked: boolean) => {
+                setRevokeAccess(checked)
+                if (checked) {
+                  setSelectedPermissionSetId('')
+                }
+              }}
+            />
+            <Label htmlFor="revoke-access" className="text-sm">
+              Revoke access (remove all permissions for this report)
+            </Label>
           </div>
 
           {/* RLS Role Selection */}
