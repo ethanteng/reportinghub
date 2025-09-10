@@ -7,11 +7,8 @@ import { PermissionSetsTable } from './PermissionSetsTable'
 import { ReportAccessMatrix } from './ReportAccessMatrix'
 import { SetupWizard } from './SetupWizard'
 import { 
-  tenants, 
   tenantContoso, 
-  permissionSets, 
   reports, 
-  assignments, 
   byTenantId 
 } from '@/types/mockAzureAD'
 import { usePermissionsStore } from '@/store/usePermissionsStore'
@@ -26,25 +23,12 @@ export function PermissionsHub() {
     setSetupWizardOpen
   } = usePermissionsStore()
 
-  // Initialize with default tenant and data
+  // Initialize with default tenant
   useEffect(() => {
     if (!currentTenantId) {
       setCurrentTenantId(tenantContoso.tenantId)
     }
-    
-    // Initialize store with mock data
-    if (storePermissionSets.length === 0) {
-      permissionSets.forEach(ps => {
-        usePermissionsStore.getState().addPermissionSet(ps)
-      })
-    }
-    
-    if (storeAssignments.length === 0) {
-      assignments.forEach(assignment => {
-        usePermissionsStore.getState().addAssignment(assignment)
-      })
-    }
-  }, [currentTenantId, setCurrentTenantId, storePermissionSets.length, storeAssignments.length])
+  }, [currentTenantId, setCurrentTenantId])
 
   const currentTenant = currentTenantId ? byTenantId.get(currentTenantId) : null
 

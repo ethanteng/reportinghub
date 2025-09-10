@@ -6,6 +6,7 @@ import {
   ReportRef, 
   Guid 
 } from '@/types/mockAzureAD'
+import { permissionSets as mockPermissionSets, assignments as mockAssignments } from '@/types/mockAzureAD'
 
 interface PermissionsState {
   // Current tenant
@@ -50,8 +51,8 @@ export const usePermissionsStore = create<PermissionsState>((set, get) => ({
   currentTenantId: null,
   setCurrentTenantId: (tenantId) => set({ currentTenantId: tenantId }),
   
-  // Permission sets
-  permissionSets: [],
+  // Permission sets (initialized with mock data)
+  permissionSets: mockPermissionSets,
   addPermissionSet: (permissionSet) => 
     set((state) => ({ 
       permissionSets: [...state.permissionSets, permissionSet] 
@@ -67,8 +68,8 @@ export const usePermissionsStore = create<PermissionsState>((set, get) => ({
       permissionSets: state.permissionSets.filter(ps => ps.id !== id)
     })),
   
-  // Group assignments
-  assignments: [],
+  // Group assignments (initialized with mock data)
+  assignments: mockAssignments,
   addAssignment: (assignment) =>
     set((state) => ({
       assignments: [...state.assignments, assignment]
