@@ -169,7 +169,7 @@ export function ReportAccessMatrix({ tenant, reports }: ReportAccessMatrixProps)
                           checked={selectedReports.includes(report.id)}
                           onCheckedChange={() => toggleReportSelection(report.id)}
                         />
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between w-full">
                           <div className="flex flex-col">
                             <span>{report.name}</span>
                             <span className="text-xs text-muted-foreground">{report.path}</span>
@@ -178,6 +178,7 @@ export function ReportAccessMatrix({ tenant, reports }: ReportAccessMatrixProps)
                             variant="outline"
                             size="sm"
                             onClick={() => setAuditReportId(report.id)}
+                            className="ml-2"
                           >
                             Audit
                           </Button>
