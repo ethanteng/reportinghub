@@ -39,7 +39,7 @@ export function OverrideReportAccessModal({
   } = usePermissionsStore()
   
   const [selectedPermissionSetId, setSelectedPermissionSetId] = useState<string>('')
-  const [selectedRlsRole, setSelectedRlsRole] = useState<string>('')
+  const [selectedRlsRole, setSelectedRlsRole] = useState<string>('none')
 
   // Find existing report-level assignment for this group
   const existingAssignment = assignments.find(
@@ -59,10 +59,10 @@ export function OverrideReportAccessModal({
   useEffect(() => {
     if (existingAssignment) {
       setSelectedPermissionSetId(existingAssignment.permissionSetId)
-      setSelectedRlsRole(existingAssignment.rlsRole || '')
+      setSelectedRlsRole(existingAssignment.rlsRole || 'none')
     } else {
       setSelectedPermissionSetId('')
-      setSelectedRlsRole('')
+      setSelectedRlsRole('none')
     }
   }, [existingAssignment, open])
 
@@ -74,7 +74,7 @@ export function OverrideReportAccessModal({
         permissionSetId: selectedPermissionSetId,
         scope: 'Report' as const,
         targetId: report.id,
-        rlsRole: selectedRlsRole || undefined,
+        rlsRole: selectedRlsRole === 'none' ? undefined : selectedRlsRole,
         inherited: false
       }
 
@@ -180,7 +180,7 @@ export function OverrideReportAccessModal({
                   <SelectValue placeholder="Select RLS role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No RLS role</SelectItem>
+                  <SelectItem value="none">No RLS role</SelectItem>
                   {report.rlsRoles.map(role => (
                     <SelectItem key={role} value={role}>
                       {role}
