@@ -90,6 +90,7 @@ export const tenantContoso: Tenant = {
   verifiedDomains: ["contoso.com"],
 
   users: [
+    // Executive Team
     {
       "@odata.type": "#microsoft.graph.user",
       id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001"),
@@ -110,7 +111,177 @@ export const tenantContoso: Tenant = {
       surname: "King",
       accountEnabled: true,
     },
-    // Guest user example (#EXT# UPN format)
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000004"),
+      displayName: "Sarah Chen",
+      mail: "sarah.chen@contoso.com",
+      userPrincipalName: "sarah.chen@contoso.com",
+      givenName: "Sarah",
+      surname: "Chen",
+      accountEnabled: true,
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000005"),
+      displayName: "Michael Rodriguez",
+      mail: "michael.rodriguez@contoso.com",
+      userPrincipalName: "michael.rodriguez@contoso.com",
+      givenName: "Michael",
+      surname: "Rodriguez",
+      accountEnabled: true,
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000006"),
+      displayName: "Jennifer Liu",
+      mail: "jennifer.liu@contoso.com",
+      userPrincipalName: "jennifer.liu@contoso.com",
+      givenName: "Jennifer",
+      surname: "Liu",
+      accountEnabled: true,
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000007"),
+      displayName: "David Thompson",
+      mail: "david.thompson@contoso.com",
+      userPrincipalName: "david.thompson@contoso.com",
+      givenName: "David",
+      surname: "Thompson",
+      accountEnabled: true,
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000008"),
+      displayName: "Emily Johnson",
+      mail: "emily.johnson@contoso.com",
+      userPrincipalName: "emily.johnson@contoso.com",
+      givenName: "Emily",
+      surname: "Johnson",
+      accountEnabled: true,
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000009"),
+      displayName: "Robert Kim",
+      mail: "robert.kim@contoso.com",
+      userPrincipalName: "robert.kim@contoso.com",
+      givenName: "Robert",
+      surname: "Kim",
+      accountEnabled: true,
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000010"),
+      displayName: "Lisa Martinez",
+      mail: "lisa.martinez@contoso.com",
+      userPrincipalName: "lisa.martinez@contoso.com",
+      givenName: "Lisa",
+      surname: "Martinez",
+      accountEnabled: true,
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000011"),
+      displayName: "James Wilson",
+      mail: "james.wilson@contoso.com",
+      userPrincipalName: "james.wilson@contoso.com",
+      givenName: "James",
+      surname: "Wilson",
+      accountEnabled: true,
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000012"),
+      displayName: "Amanda Davis",
+      mail: "amanda.davis@contoso.com",
+      userPrincipalName: "amanda.davis@contoso.com",
+      givenName: "Amanda",
+      surname: "Davis",
+      accountEnabled: true,
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000013"),
+      displayName: "Christopher Brown",
+      mail: "christopher.brown@contoso.com",
+      userPrincipalName: "christopher.brown@contoso.com",
+      givenName: "Christopher",
+      surname: "Brown",
+      accountEnabled: true,
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000014"),
+      displayName: "Michelle Taylor",
+      mail: "michelle.taylor@contoso.com",
+      userPrincipalName: "michelle.taylor@contoso.com",
+      givenName: "Michelle",
+      surname: "Taylor",
+      accountEnabled: true,
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000015"),
+      displayName: "Kevin Anderson",
+      mail: "kevin.anderson@contoso.com",
+      userPrincipalName: "kevin.anderson@contoso.com",
+      givenName: "Kevin",
+      surname: "Anderson",
+      accountEnabled: true,
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000016"),
+      displayName: "Rachel Green",
+      mail: "rachel.green@contoso.com",
+      userPrincipalName: "rachel.green@contoso.com",
+      givenName: "Rachel",
+      surname: "Green",
+      accountEnabled: true,
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000017"),
+      displayName: "Daniel White",
+      mail: "daniel.white@contoso.com",
+      userPrincipalName: "daniel.white@contoso.com",
+      givenName: "Daniel",
+      surname: "White",
+      accountEnabled: true,
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000018"),
+      displayName: "Stephanie Lee",
+      mail: "stephanie.lee@contoso.com",
+      userPrincipalName: "stephanie.lee@contoso.com",
+      givenName: "Stephanie",
+      surname: "Lee",
+      accountEnabled: true,
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000019"),
+      displayName: "Matthew Garcia",
+      mail: "matthew.garcia@contoso.com",
+      userPrincipalName: "matthew.garcia@contoso.com",
+      givenName: "Matthew",
+      surname: "Garcia",
+      accountEnabled: true,
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000020"),
+      displayName: "Nicole Clark",
+      mail: "nicole.clark@contoso.com",
+      userPrincipalName: "nicole.clark@contoso.com",
+      givenName: "Nicole",
+      surname: "Clark",
+      accountEnabled: true,
+    },
+    // Guest users
     {
       "@odata.type": "#microsoft.graph.user",
       id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000003"),
@@ -121,23 +292,42 @@ export const tenantContoso: Tenant = {
       surname: "Rivera",
       accountEnabled: true,
     },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000021"),
+      displayName: "Alex Patel (Contractor)",
+      userPrincipalName: "alex_patel_outlook.com#EXT#@contoso.onmicrosoft.com",
+      mail: undefined,
+      givenName: "Alex",
+      surname: "Patel",
+      accountEnabled: true,
+    },
+    {
+      "@odata.type": "#microsoft.graph.user",
+      id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000022"),
+      displayName: "Maria Santos (Consultant)",
+      userPrincipalName: "maria_santos_yahoo.com#EXT#@contoso.onmicrosoft.com",
+      mail: undefined,
+      givenName: "Maria",
+      surname: "Santos",
+      accountEnabled: true,
+    },
   ],
 
   groups: [
-    // Security group (typical for permissioning)
+    // Executive & Leadership Groups
     {
       "@odata.type": "#microsoft.graph.group",
       id: guid("a0a0a0a0-1111-4444-9999-000000000010"),
-      displayName: "Finance Team",
-      description: "Contoso Finance analysts",
+      displayName: "C-Suite Executives",
+      description: "C-level executives and board members",
       securityEnabled: true,
-      groupTypes: [], // empty => Security group
+      groupTypes: [],
       members: [
         { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") }, // Alice
-        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000002") }, // Ben
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000004") }, // Sarah
       ],
     },
-    // Microsoft 365 group (Unified)
     {
       "@odata.type": "#microsoft.graph.group",
       id: guid("a0a0a0a0-1111-4444-9999-000000000011"),
@@ -148,28 +338,297 @@ export const tenantContoso: Tenant = {
       visibility: "Private",
       members: [
         { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") }, // Alice
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000004") }, // Sarah
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000005") }, // Michael
       ],
       owners: [
         { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") },
       ],
     },
-    // Nested group example (members include another group)
     {
       "@odata.type": "#microsoft.graph.group",
       id: guid("a0a0a0a0-1111-4444-9999-000000000012"),
-      displayName: "All Analytics",
-      description: "Union of Finance Team + Guests",
+      displayName: "Senior Management",
+      description: "Directors and senior managers",
       securityEnabled: true,
       groupTypes: [],
       members: [
-        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("a0a0a0a0-1111-4444-9999-000000000010") }, // Finance Team (nested)
-        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000003") }, // Chloe (Guest)
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000002") }, // Ben
       ],
     },
-    // Dynamic group example (rule syntax similar to AAD)
+
+    // Finance & Accounting
     {
       "@odata.type": "#microsoft.graph.group",
-      id: guid("a0a0a0a0-1111-4444-9999-000000000013"),
+      id: guid("a0a0a0a0-1111-4444-9999-000000000020"),
+      displayName: "Finance Team",
+      description: "Finance analysts and accountants",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") }, // Alice
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000002") }, // Ben
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000006") }, // Jennifer
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000007") }, // David
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000008") }, // Emily
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000021"),
+      displayName: "Accounting Department",
+      description: "Accounts payable, receivable, and general accounting",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") }, // Alice
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000022"),
+      displayName: "Financial Planning & Analysis",
+      description: "FP&A team for budgeting and forecasting",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000002") }, // Ben
+      ],
+    },
+
+    // Sales & Marketing
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000030"),
+      displayName: "Sales Team",
+      description: "Sales representatives and account managers",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") }, // Alice
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000031"),
+      displayName: "Marketing Team",
+      description: "Marketing professionals and content creators",
+      securityEnabled: false,
+      groupTypes: ["Unified"], // M365 group
+      visibility: "Private",
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000002") }, // Ben
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000032"),
+      displayName: "Customer Success",
+      description: "Customer success managers and support",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") }, // Alice
+      ],
+    },
+
+    // IT & Technology
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000040"),
+      displayName: "IT Department",
+      description: "IT support and infrastructure team",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000002") }, // Ben
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000041"),
+      displayName: "Engineering Team",
+      description: "Software engineers and developers",
+      securityEnabled: false,
+      groupTypes: ["Unified"], // M365 group
+      visibility: "Public",
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") }, // Alice
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000002") }, // Ben
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000009") }, // Robert
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000010") }, // Lisa
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000011") }, // James
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000012") }, // Amanda
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000013") }, // Christopher
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000042"),
+      displayName: "Data Science Team",
+      description: "Data scientists and analysts",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") }, // Alice
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000043"),
+      displayName: "DevOps Team",
+      description: "DevOps engineers and platform team",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000002") }, // Ben
+      ],
+    },
+
+    // HR & Operations
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000050"),
+      displayName: "Human Resources",
+      description: "HR professionals and recruiters",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") }, // Alice
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000051"),
+      displayName: "Operations Team",
+      description: "Business operations and process improvement",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000002") }, // Ben
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000052"),
+      displayName: "Legal & Compliance",
+      description: "Legal team and compliance officers",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") }, // Alice
+      ],
+    },
+
+    // Regional & Departmental Groups
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000060"),
+      displayName: "North America Employees",
+      description: "All employees in North America region",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") }, // Alice
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000002") }, // Ben
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000061"),
+      displayName: "EMEA Team",
+      description: "Europe, Middle East, and Africa employees",
+      securityEnabled: false,
+      groupTypes: ["Unified"], // M365 group
+      visibility: "Private",
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") }, // Alice
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000062"),
+      displayName: "APAC Operations",
+      description: "Asia Pacific operations team",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000002") }, // Ben
+      ],
+    },
+
+    // Project & Initiative Groups
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000070"),
+      displayName: "Digital Transformation Initiative",
+      description: "Cross-functional team for digital transformation",
+      securityEnabled: false,
+      groupTypes: ["Unified"], // M365 group
+      visibility: "Private",
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") }, // Alice
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000002") }, // Ben
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000071"),
+      displayName: "Product Launch Team",
+      description: "Team working on Q2 product launch",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") }, // Alice
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000072"),
+      displayName: "Security Committee",
+      description: "Information security and compliance committee",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000002") }, // Ben
+      ],
+    },
+
+    // Dynamic Groups
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000080"),
+      displayName: "All Employees",
+      description: "All active employees in the organization",
+      securityEnabled: true,
+      groupTypes: [],
+      membershipRule: 'user.accountEnabled -eq true -and user.userType -eq "Member"',
+      membershipRuleProcessingState: "On",
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") }, // Alice
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000002") }, // Ben
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000004") }, // Sarah
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000005") }, // Michael
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000006") }, // Jennifer
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000007") }, // David
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000008") }, // Emily
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000009") }, // Robert
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000010") }, // Lisa
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000011") }, // James
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000012") }, // Amanda
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000013") }, // Christopher
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000014") }, // Michelle
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000015") }, // Kevin
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000016") }, // Rachel
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000017") }, // Daniel
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000018") }, // Stephanie
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000019") }, // Matthew
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000020") }, // Nicole
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000081"),
       displayName: "External Guests (Dynamic)",
       description: "Users whose UPN ends with #EXT#",
       securityEnabled: true,
@@ -177,8 +636,108 @@ export const tenantContoso: Tenant = {
       membershipRule: 'user.userPrincipalName -contains "#EXT#"',
       membershipRuleProcessingState: "On",
       members: [
-        // In real AAD, dynamic groups are computed; we include Chloe here for mock parity
-        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000003") },
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000003") }, // Chloe (Guest)
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000082"),
+      displayName: "Contractors",
+      description: "External contractors and consultants",
+      securityEnabled: true,
+      groupTypes: [],
+      membershipRule: 'user.userType -eq "Guest" -and user.accountEnabled -eq true',
+      membershipRuleProcessingState: "On",
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000003") }, // Chloe (Guest)
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000083"),
+      displayName: "New Hires (First 90 Days)",
+      description: "Employees in their first 90 days",
+      securityEnabled: true,
+      groupTypes: [],
+      membershipRule: 'user.createdDateTime -ge (Now() - 90)',
+      membershipRuleProcessingState: "On",
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") }, // Alice
+      ],
+    },
+
+    // Nested Groups
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000090"),
+      displayName: "All Analytics",
+      description: "Union of Finance Team + Data Science Team",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("a0a0a0a0-1111-4444-9999-000000000020") }, // Finance Team (nested)
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("a0a0a0a0-1111-4444-9999-000000000042") }, // Data Science Team (nested)
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000091"),
+      displayName: "Technology Division",
+      description: "All technology-related teams",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("a0a0a0a0-1111-4444-9999-000000000040") }, // IT Department (nested)
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("a0a0a0a0-1111-4444-9999-000000000041") }, // Engineering Team (nested)
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("a0a0a0a0-1111-4444-9999-000000000043") }, // DevOps Team (nested)
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000092"),
+      displayName: "Business Operations",
+      description: "All business-facing teams",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("a0a0a0a0-1111-4444-9999-000000000030") }, // Sales Team (nested)
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("a0a0a0a0-1111-4444-9999-000000000031") }, // Marketing Team (nested)
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("a0a0a0a0-1111-4444-9999-000000000032") }, // Customer Success (nested)
+      ],
+    },
+
+    // Special Access Groups
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000100"),
+      displayName: "Sensitive Data Access",
+      description: "Users with access to sensitive financial data",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") }, // Alice
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000101"),
+      displayName: "System Administrators",
+      description: "Users with administrative privileges",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000002") }, // Ben
+      ],
+    },
+    {
+      "@odata.type": "#microsoft.graph.group",
+      id: guid("a0a0a0a0-1111-4444-9999-000000000102"),
+      displayName: "Audit & Compliance",
+      description: "Users involved in audit and compliance activities",
+      securityEnabled: true,
+      groupTypes: [],
+      members: [
+        { "@odata.type": "#microsoft.graph.directoryObject", id: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001") }, // Alice
       ],
     },
   ],

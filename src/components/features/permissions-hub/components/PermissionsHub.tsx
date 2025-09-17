@@ -6,6 +6,7 @@ import { GroupsTable } from './GroupsTable'
 import { PermissionSetsTable } from './PermissionSetsTable'
 import { ReportAccessMatrix } from './ReportAccessMatrix'
 import { SetupWizard } from './SetupWizard'
+import { GroupRoleWizard } from './GroupRoleWizard'
 import { 
   tenantContoso, 
   reports, 
@@ -20,7 +21,9 @@ export function PermissionsHub() {
     permissionSets: storePermissionSets,
     assignments: storeAssignments,
     setupWizardOpen,
-    setSetupWizardOpen
+    setSetupWizardOpen,
+    groupRoleWizardOpen,
+    setGroupRoleWizardOpen
   } = usePermissionsStore()
 
   // Initialize with default tenant
@@ -54,6 +57,12 @@ export function PermissionsHub() {
         </div>
         <div className="flex items-center gap-4">
           <TenantSwitcher />
+          <Button 
+            variant="outline"
+            onClick={() => setGroupRoleWizardOpen(true)}
+          >
+            Setup Wizard
+          </Button>
           {/* Setup Wizard button temporarily hidden */}
           {/* <Button 
             variant="outline"
@@ -87,6 +96,12 @@ export function PermissionsHub() {
       <SetupWizard 
         open={setupWizardOpen} 
         onOpenChange={setSetupWizardOpen}
+        tenant={currentTenant}
+      />
+      
+      <GroupRoleWizard 
+        open={groupRoleWizardOpen} 
+        onOpenChange={setGroupRoleWizardOpen}
         tenant={currentTenant}
       />
     </div>

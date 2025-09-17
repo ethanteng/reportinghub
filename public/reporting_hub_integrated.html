@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporting Hub - Permissions Management</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Styles -->
+    <style>
+        :root {
+            --primary-color: #178EE8;
+            --admin-grey: #E0E2E7;
+            --buttonface-color: #178EE8;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .admin-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            padding: 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #404040;
+        }
+
+        .sidebar-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .sidebar-nav {
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 12px 20px;
+            color: #b0b0b0;
+            text-decoration: none;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-item.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-left-color: white;
+        }
+
+        .nav-item i {
+            margin-right: 10px;
+            width: 16px;
+        }
+
+        .main-content {
+            margin-left: 280px;
+            flex: 1;
+            padding: 0;
+        }
+
+        .main-header {
+            background: white;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e0e0e0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .main-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            color: #1a1a1a;
+        }
+
+        .main-description {
+            color: #666;
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .content-area {
+            display: flex;
+            height: calc(100vh - 80px);
+        }
+
+        .navigation-list {
+            width: 40%;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .nav-list-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #1a1a1a;
+        }
+
+        .nav-list-item {
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-list-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .nav-list-item.active {
+            background-color: #e3f2fd;
+            border-left-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .nav-list-item.parent {
+            font-weight: 600;
+            background-color: #f5f5f5;
+        }
+
+        .nav-list-item.child {
+            margin-left: 20px;
+            font-size: 14px;
+        }
+
+        .form-section {
+            width: 60%;
+            background: white;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .form-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1a1a1a;
+        }
+
+        .form-description {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .parent-item {
+            background-color: #f8f9fa;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid #dee2e6;
+            color: #495057;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        /* Content Views */
+        .content-view {
+            display: none;
+        }
+
+        .content-view.active {
+            display: block;
+        }
+
+        /* Permissions Hub Full App Styles */
+        .permissions-hub-full {
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .permissions-hub-full .p-6 {
+            padding: 0 !important;
+        }
+
+        /* Highlight box for the form section when in content mode - REMOVED */
+
+        /* Hide navigation list when in permissions mode */
+        .content-area.permissions-mode .navigation-list {
+            display: none;
+        }
+
+        .content-area.permissions-mode .form-section {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3>REPORTING HUB</h3>
+            </div>
+            <div class="sidebar-nav">
+                <div class="nav-section">
+                    <div style="padding: 0 20px 10px; font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase;">
+                        ADMIN SETTINGS
+                    </div>
+                    <a href="#" class="nav-item active" data-view="content">
+                        <i class="fas fa-cog"></i>
+                        Manage Content
+                    </a>
+                    <a href="#" class="nav-item" data-view="permissions">
+                        <i class="fas fa-shield-alt"></i>
+                        Manage Permissions
+                    </a>
+                    <a href="#" class="nav-item" data-view="groups">
+                        <i class="fas fa-users"></i>
+                        Manage Groups
+                    </a>
+                    <a href="#" class="nav-item" data-view="theme">
+                        <i class="fas fa-palette"></i>
+                        Edit Theme
+                    </a>
+                    <a href="#" class="nav-item" data-view="powerbi">
+                        <i class="fas fa-chart-bar"></i>
+                        Power BI Settings
+                    </a>
+                    <a href="#" class="nav-item" data-view="app">
+                        <i class="fas fa-cog"></i>
+                        App Settings
+                    </a>
+                    <a href="#" class="nav-item" data-view="help">
+                        <i class="fas fa-question-circle"></i>
+                        Help
+                    </a>
+                    <a href="#" class="nav-item" data-view="community">
+                        <i class="fas fa-comments"></i>
+                        Community
+                    </a>
+                    <a href="#" class="nav-item" data-view="exit">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Exit Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="main-header">
+                <h1 class="main-title" id="main-title">Manage Content</h1>
+                <p class="main-description" id="main-description">
+                    <i class="fas fa-info-circle"></i>
+                    Create and manage side navigation options
+                </p>
+            </div>
+
+            <div class="content-area" id="content-area">
+                <!-- Navigation List -->
+                <div class="navigation-list">
+                    <div class="nav-list-title">Navigation Items</div>
+                    
+                    <div class="nav-list-item parent">
+                        <i class="fas fa-folder"></i>
+                        GS Background
+                    </div>
+                    
+                    <div class="nav-list-item parent">
+                        <i class="fas fa-folder"></i>
+                        GS No Background
+                    </div>
+                    
+                    <div class="nav-list-item parent">
+                        <i class="fas fa-folder"></i>
+                        Test Reports
+                    </div>
+                    
+                    <div class="nav-list-item parent">
+                        <i class="fas fa-folder"></i>
+                        Test Storage Pages
+                    </div>
+                    
+                    <div class="nav-list-item parent">
+                        <i class="fas fa-chevron-up"></i>
+                        Customer Test Reports
+                    </div>
+                    <div class="nav-list-item child active">
+                        Heat Map Test - OPKansas
+                    </div>
+                    
+                    <div class="nav-list-item parent">
+                        <i class="fas fa-folder"></i>
+                        Test URL Pages
+                    </div>
+                    
+                    <div class="nav-list-item parent">
+                        <i class="fas fa-folder"></i>
+                        Bug Specific Testing
+                    </div>
+                    
+                    <div class="nav-list-item parent">
+                        <i class="fas fa-folder"></i>
+                        Example
+                    </div>
+                    
+                    <div class="nav-list-item parent">
+                        <i class="fas fa-folder"></i>
+                        Audit Log
+                    </div>
+                </div>
+
+                <!-- Content Views -->
+                <div class="form-section content-view active" id="content-view">
+                    <div class="form-title">Edit Navigation Option</div>
+                    <div class="form-description">Edit the details for your navigation option</div>
+                    
+                    <div class="parent-item">
+                        <strong>Parent Item:</strong> Customer Test Reports
+                    </div>
+
+                    <!-- Original form content would go here -->
+                    <div class="form-group mb-4">
+                        <label for="nav-name" class="form-label">Name *</label>
+                        <input type="text" class="form-control" id="nav-name" value="Heat Map Test - OPKansas" required>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label for="nav-description" class="form-label">Description</label>
+                        <input type="text" class="form-control" id="nav-description" placeholder="Report subtitle">
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label for="nav-icon" class="form-label">Icon</label>
+                        <input type="text" class="form-control" id="nav-icon" placeholder="Choose Icon">
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label for="powerbi-workspace" class="form-label">Select Power BI Workspace</label>
+                        <select class="form-control" id="powerbi-workspace">
+                            <option value="2abfc523-cf40-4bea-bb17-7ac95159e0ed" selected>RH UAT Workspace</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label for="powerbi-content" class="form-label">Power BI Content</label>
+                        <select class="form-control" id="powerbi-content">
+                            <option value="heatmaptest" selected>HeatMapTest</option>
+                        </select>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-outline">
+                            <i class="fas fa-sync-alt"></i>
+                            Refresh Workspaces
+                        </button>
+                        <button class="btn btn-secondary">
+                            Cancel
+                        </button>
+                        <button class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Save
+                            <i class="fas fa-chevron-down ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Permissions Hub Full App -->
+                <div class="form-section content-view permissions-hub-full" id="permissions-view">
+                    <div id="permissions-hub-root">
+                        <!-- React app will be rendered here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom React App -->
+    <script type="text/babel">
+        const { useState, useEffect, createContext, useContext } = React;
+
+        // Mock data and types
+        const tenantContoso = {
+            tenantId: 'contoso-tenant-id',
+            displayName: 'Contoso Corporation',
+            defaultDomainName: 'contoso.com'
+        };
+
+        const reports = [
+            { id: '1', name: 'Sales Dashboard', workspace: 'Sales Workspace' },
+            { id: '2', name: 'Marketing Analytics', workspace: 'Marketing Workspace' },
+            { id: '3', name: 'Financial Reports', workspace: 'Finance Workspace' }
+        ];
+
+        const byTenantId = new Map([
+            [tenantContoso.tenantId, tenantContoso]
+        ]);
+
+        // Context for permissions store
+        const PermissionsContext = createContext();
+
+        // Permissions Store Hook
+        function usePermissionsStore() {
+            const context = useContext(PermissionsContext);
+            if (!context) {
+                throw new Error('usePermissionsStore must be used within a PermissionsProvider');
+            }
+            return context;
+        }
+
+        // Permissions Provider
+        function PermissionsProvider({ children }) {
+            const [currentTenantId, setCurrentTenantId] = useState(null);
+            const [permissionSets, setPermissionSets] = useState([]);
+            const [assignments, setAssignments] = useState([]);
+            const [setupWizardOpen, setSetupWizardOpen] = useState(false);
+
+            useEffect(() => {
+                if (!currentTenantId) {
+                    setCurrentTenantId(tenantContoso.tenantId);
+                }
+            }, [currentTenantId]);
+
+            const value = {
+                currentTenantId,
+                setCurrentTenantId,
+                permissionSets,
+                setPermissionSets,
+                assignments,
+                setAssignments,
+                setupWizardOpen,
+                setSetupWizardOpen
+            };
+
+            return React.createElement(PermissionsContext.Provider, { value }, children);
+        }
+
+        // UI Components
+        function Button({ children, className = '', variant = 'default', onClick, ...props }) {
+            const baseClasses = 'px-4 py-2 rounded-md font-medium transition-colors';
+            const variants = {
+                default: 'bg-blue-600 text-white hover:bg-blue-700',
+                outline: 'border border-gray-300 text-gray-700 hover:bg-gray-50',
+                secondary: 'bg-gray-600 text-white hover:bg-gray-700'
+            };
+            
+            return React.createElement('button', {
+                className: `${baseClasses} ${variants[variant]} ${className}`,
+                onClick,
+                ...props
+            }, children);
+        }
+
+        function Tabs({ defaultValue, children, className = '' }) {
+            const [activeTab, setActiveTab] = useState(defaultValue);
+            
+            return React.createElement('div', { className: `tabs ${className}` }, 
+                React.Children.map(children, child => 
+                    React.cloneElement(child, { activeTab, setActiveTab })
+                )
+            );
+        }
+
+        function TabsList({ children, className = '' }) {
+            return React.createElement('div', { 
+                className: `flex border-b border-gray-200 ${className}` 
+            }, children);
+        }
+
+        function TabsTrigger({ value, children, activeTab, setActiveTab, className = '' }) {
+            const isActive = activeTab === value;
+            return React.createElement('button', {
+                className: `px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    isActive 
+                        ? 'border-blue-600 text-blue-600' 
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                } ${className}`,
+                onClick: () => setActiveTab(value)
+            }, children);
+        }
+
+        function TabsContent({ value, children, activeTab }) {
+            if (activeTab !== value) return null;
+            return React.createElement('div', { className: 'mt-4' }, children);
+        }
+
+        // Tenant Switcher Component
+        function TenantSwitcher() {
+            const { currentTenantId, setCurrentTenantId } = usePermissionsStore();
+            const currentTenant = currentTenantId ? byTenantId.get(currentTenantId) : null;
+
+            return React.createElement('div', { className: 'flex items-center gap-2' },
+                React.createElement('span', { className: 'text-sm text-gray-600' }, 'Tenant:'),
+                React.createElement('select', {
+                    value: currentTenantId || '',
+                    onChange: (e) => setCurrentTenantId(e.target.value),
+                    className: 'px-3 py-1 border border-gray-300 rounded-md text-sm'
+                },
+                    React.createElement('option', { value: tenantContoso.tenantId }, tenantContoso.displayName)
+                )
+            );
+        }
+
+        // Groups Table Component
+        function GroupsTable({ tenant }) {
+            return React.createElement('div', { className: 'bg-white rounded-lg border border-gray-200 p-6' },
+                React.createElement('h3', { className: 'text-lg font-semibold mb-4' }, 'Users & Groups'),
+                React.createElement('p', { className: 'text-gray-600' }, `Groups for ${tenant.displayName}`),
+                React.createElement('div', { className: 'mt-4' },
+                    React.createElement('div', { className: 'text-sm text-gray-500' }, 'No groups configured yet.')
+                )
+            );
+        }
+
+        // Permission Sets Table Component
+        function PermissionSetsTable() {
+            return React.createElement('div', { className: 'bg-white rounded-lg border border-gray-200 p-6' },
+                React.createElement('h3', { className: 'text-lg font-semibold mb-4' }, 'Permission Sets'),
+                React.createElement('div', { className: 'mt-4' },
+                    React.createElement('div', { className: 'text-sm text-gray-500' }, 'No permission sets configured yet.')
+                )
+            );
+        }
+
+        // Report Access Matrix Component
+        function ReportAccessMatrix({ tenant, reports }) {
+            return React.createElement('div', { className: 'bg-white rounded-lg border border-gray-200 p-6' },
+                React.createElement('h3', { className: 'text-lg font-semibold mb-4' }, 'Report Access Matrix'),
+                React.createElement('p', { className: 'text-gray-600 mb-4' }, `Report access for ${tenant.displayName}`),
+                React.createElement('div', { className: 'space-y-2' },
+                    reports.map(report => 
+                        React.createElement('div', { 
+                            key: report.id,
+                            className: 'flex items-center justify-between p-3 border border-gray-200 rounded-md'
+                        },
+                            React.createElement('div', null,
+                                React.createElement('div', { className: 'font-medium' }, report.name),
+                                React.createElement('div', { className: 'text-sm text-gray-500' }, report.workspace)
+                            ),
+                            React.createElement('div', { className: 'text-sm text-gray-500' }, 'No access configured')
+                        )
+                    )
+                )
+            );
+        }
+
+        // Setup Wizard Component
+        function SetupWizard({ open, onOpenChange, tenant }) {
+            if (!open) return null;
+            
+            return React.createElement('div', { 
+                className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'
+            },
+                React.createElement('div', { className: 'bg-white rounded-lg p-6 max-w-md w-full mx-4' },
+                    React.createElement('h2', { className: 'text-xl font-semibold mb-4' }, 'Setup Wizard'),
+                    React.createElement('p', { className: 'text-gray-600 mb-4' }, `Setup permissions for ${tenant.displayName}`),
+                    React.createElement('div', { className: 'flex gap-2 justify-end' },
+                        React.createElement(Button, { 
+                            variant: 'outline',
+                            onClick: () => onOpenChange(false)
+                        }, 'Cancel'),
+                        React.createElement(Button, { 
+                            onClick: () => onOpenChange(false)
+                        }, 'Start Setup')
+                    )
+                )
+            );
+        }
+
+        // Main Permissions Hub Component
+        function PermissionsHub() {
+            const { 
+                currentTenantId, 
+                setCurrentTenantId, 
+                permissionSets: storePermissionSets,
+                assignments: storeAssignments,
+                setupWizardOpen,
+                setSetupWizardOpen
+            } = usePermissionsStore();
+
+            // Initialize with default tenant
+            useEffect(() => {
+                if (!currentTenantId) {
+                    setCurrentTenantId(tenantContoso.tenantId);
+                }
+            }, [currentTenantId, setCurrentTenantId]);
+
+            const currentTenant = currentTenantId ? byTenantId.get(currentTenantId) : null;
+
+            if (!currentTenant) {
+                return React.createElement('div', { className: 'p-6' },
+                    React.createElement('div', { className: 'text-center' },
+                        React.createElement('h1', { className: 'text-2xl font-bold mb-4' }, 'Permissions Hub'),
+                        React.createElement('p', { className: 'text-gray-600' }, 'Please select a tenant to continue.')
+                    )
+                );
+            }
+
+            return React.createElement('div', { className: 'space-y-4' },
+                React.createElement('header', { className: 'flex items-center justify-between' },
+                    React.createElement('div', null,
+                        React.createElement('h1', { className: 'text-2xl font-bold' }, 'Permissions Hub'),
+                        React.createElement('p', { className: 'text-sm text-gray-600' },
+                            `Tenant: ${currentTenant.displayName} (${currentTenant.defaultDomainName})`
+                        )
+                    ),
+                    React.createElement('div', { className: 'flex items-center gap-4' },
+                        React.createElement(TenantSwitcher),
+                        React.createElement(Button, { 
+                            variant: 'outline',
+                            onClick: () => setSetupWizardOpen(true)
+                        }, 'Setup Wizard')
+                    )
+                ),
+
+                React.createElement(Tabs, { defaultValue: 'reports', className: 'space-y-4' },
+                    React.createElement(TabsList, { className: 'grid grid-cols-3' },
+                        React.createElement(TabsTrigger, { value: 'reports' }, 'Report Access'),
+                        React.createElement(TabsTrigger, { value: 'groups' }, 'Users & Groups'),
+                        React.createElement(TabsTrigger, { value: 'sets' }, 'Permission Sets')
+                    ),
+
+                    React.createElement(TabsContent, { value: 'reports' },
+                        React.createElement(ReportAccessMatrix, { tenant: currentTenant, reports })
+                    ),
+
+                    React.createElement(TabsContent, { value: 'groups' },
+                        React.createElement(GroupsTable, { tenant: currentTenant })
+                    ),
+
+                    React.createElement(TabsContent, { value: 'sets' },
+                        React.createElement(PermissionSetsTable)
+                    )
+                ),
+
+                React.createElement(SetupWizard, { 
+                    open: setupWizardOpen, 
+                    onOpenChange: setSetupWizardOpen,
+                    tenant: currentTenant
+                })
+            );
+        }
+
+        // App Component
+        function App() {
+            return React.createElement(PermissionsProvider, null,
+                React.createElement(PermissionsHub)
+            );
+        }
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('permissions-hub-root'));
+        root.render(React.createElement(App));
+    </script>
+
+    <!-- Navigation Logic -->
+    <script>
+        // Navigation functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const navItems = document.querySelectorAll('.nav-item[data-view]');
+            const contentViews = document.querySelectorAll('.content-view');
+            const contentArea = document.getElementById('content-area');
+            const mainTitle = document.getElementById('main-title');
+            const mainDescription = document.getElementById('main-description');
+
+            const viewConfig = {
+                content: {
+                    title: 'Manage Content',
+                    description: 'Create and manage side navigation options',
+                    showNavList: true,
+                    highlighted: false
+                },
+                permissions: {
+                    title: 'Manage Permissions',
+                    description: 'Configure user permissions and access controls',
+                    showNavList: false,
+                    highlighted: false
+                },
+                groups: {
+                    title: 'Manage Groups',
+                    description: 'Manage user groups and roles',
+                    showNavList: false,
+                    highlighted: false
+                },
+                theme: {
+                    title: 'Edit Theme',
+                    description: 'Customize the application appearance',
+                    showNavList: false,
+                    highlighted: false
+                },
+                powerbi: {
+                    title: 'Power BI Settings',
+                    description: 'Configure Power BI integration settings',
+                    showNavList: false,
+                    highlighted: false
+                },
+                app: {
+                    title: 'App Settings',
+                    description: 'Configure application settings',
+                    showNavList: false,
+                    highlighted: false
+                },
+                help: {
+                    title: 'Help',
+                    description: 'Get help and support',
+                    showNavList: false,
+                    highlighted: false
+                },
+                community: {
+                    title: 'Community',
+                    description: 'Connect with the community',
+                    showNavList: false,
+                    highlighted: false
+                },
+                exit: {
+                    title: 'Exit Settings',
+                    description: 'Return to main application',
+                    showNavList: false,
+                    highlighted: false
+                }
+            };
+
+            function switchView(viewName) {
+                // Update active nav item
+                navItems.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.dataset.view === viewName) {
+                        item.classList.add('active');
+                    }
+                });
+
+                // Hide all content views
+                contentViews.forEach(view => {
+                    view.classList.remove('active');
+                });
+
+                // Show selected view
+                const selectedView = document.getElementById(`${viewName}-view`);
+                if (selectedView) {
+                    selectedView.classList.add('active');
+                }
+
+                // Update main header
+                const config = viewConfig[viewName];
+                if (config) {
+                    mainTitle.textContent = config.title;
+                    mainDescription.innerHTML = `<i class="fas fa-info-circle"></i> ${config.description}`;
+                }
+
+                // Update content area layout
+                if (config.showNavList) {
+                    contentArea.classList.remove('permissions-mode');
+                } else {
+                    contentArea.classList.add('permissions-mode');
+                }
+
+                // Add/remove highlight for content view - DISABLED
+                // const contentView = document.getElementById('content-view');
+                // if (viewName === 'content' && config.highlighted) {
+                //     contentView.classList.add('highlighted');
+                // } else {
+                //     contentView.classList.remove('highlighted');
+                // }
+            }
+
+            // Add click handlers to nav items
+            navItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const viewName = this.dataset.view;
+                    switchView(viewName);
+                });
+            });
+
+            // Initialize with content view
+            switchView('content');
+        });
+    </script>
+</body>
+</html>

@@ -44,6 +44,10 @@ interface PermissionsState {
   setupGroupAssignments: Record<Guid, string> // groupId -> permissionSetId
   setSetupGroupAssignment: (groupId: Guid, permissionSetId: string) => void
   setSetupGroupAssignments: (assignments: Record<Guid, string>) => void
+  
+  // Group role wizard state
+  groupRoleWizardOpen: boolean
+  setGroupRoleWizardOpen: (open: boolean) => void
 }
 
 export const usePermissionsStore = create<PermissionsState>((set, get) => ({
@@ -126,6 +130,10 @@ export const usePermissionsStore = create<PermissionsState>((set, get) => ({
     })),
   setSetupGroupAssignments: (assignments) =>
     set({ setupGroupAssignments: assignments }),
+  
+  // Group role wizard
+  groupRoleWizardOpen: false,
+  setGroupRoleWizardOpen: (open) => set({ groupRoleWizardOpen: open }),
 }))
 
 // Helper functions
