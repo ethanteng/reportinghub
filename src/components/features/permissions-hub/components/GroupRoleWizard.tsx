@@ -522,7 +522,7 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
   )
 
   const renderStep3 = () => {
-    const groupAssignments: GroupAssignment[] = selectedGroups.map(groupId => {
+    const groupAssignmentList: GroupAssignment[] = selectedGroups.map(groupId => {
       const group = tenant.groups.find(g => g.id === groupId)!
       const role = groupAssignments[groupId]
       const roleName = role?.replace('ps_', '').replace('_', ' ') || 'Not assigned'
@@ -534,7 +534,7 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
       }
     })
 
-    const userAssignments: GroupAssignment[] = selectedUsers.map(userId => {
+    const userAssignmentList: GroupAssignment[] = selectedUsers.map(userId => {
       const user = tenant.users.find(u => u.id === userId)!
       const role = userAssignments[userId]
       const roleName = role?.replace('ps_', '').replace('_', ' ') || 'Not assigned'
@@ -546,7 +546,7 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
       }
     })
 
-    const allAssignments = [...groupAssignments, ...userAssignments]
+    const allAssignments = [...groupAssignmentList, ...userAssignmentList]
 
     return (
       <div className="space-y-4">
