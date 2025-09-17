@@ -929,6 +929,12 @@ export const assignments: GroupAssignment[] = [
   { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000010"), permissionSetId: "ps_viewer", scope: "Report", targetId: "r_exec" },
   { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000010"), permissionSetId: "ps_editor", scope: "Report", targetId: "r_fin" },
 
+  // Individual user assignments
+  { tenantId: tenantContoso.tenantId, aadGroupId: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000001"), permissionSetId: "ps_admin", scope: "Report", targetId: "r_sales" }, // Alice Wong
+  { tenantId: tenantContoso.tenantId, aadGroupId: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000002"), permissionSetId: "ps_viewer", scope: "Report", targetId: "r_exec" }, // Ben King
+  { tenantId: tenantContoso.tenantId, aadGroupId: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000004"), permissionSetId: "ps_editor", scope: "Report", targetId: "r_fin" }, // Sarah Chen
+  { tenantId: tenantContoso.tenantId, aadGroupId: guid("d1b3e2f0-7b0c-4a3c-9e8f-000000000005"), permissionSetId: "ps_viewer", scope: "Report", targetId: "r_sales" }, // Michael Rodriguez
+
   // Contoso: Executive Leadership => Admin (Tenant level + Report level overrides)
   { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000011"), permissionSetId: "ps_admin", scope: "Tenant" },
   { tenantId: tenantContoso.tenantId, aadGroupId: guid("a0a0a0a0-1111-4444-9999-000000000011"), permissionSetId: "ps_admin", scope: "Report", targetId: "r_sales" },

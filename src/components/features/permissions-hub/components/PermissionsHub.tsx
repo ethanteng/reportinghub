@@ -5,6 +5,7 @@ import { TenantSwitcher } from './TenantSwitcher'
 import { GroupsTable } from './GroupsTable'
 import { PermissionSetsTable } from './PermissionSetsTable'
 import { ReportAccessMatrix } from './ReportAccessMatrix'
+import { ReportAccessMatrixSidebar } from './ReportAccessMatrixSidebar'
 import { SetupWizard } from './SetupWizard'
 import { GroupRoleWizard } from './GroupRoleWizard'
 import { 
@@ -81,7 +82,7 @@ export function PermissionsHub() {
         </TabsList>
 
         <TabsContent value="reports">
-          <ReportAccessMatrix tenant={currentTenant} reports={reports} />
+          <ReportAccessMatrixSidebar tenant={currentTenant} reports={reports} />
         </TabsContent>
 
         <TabsContent value="groups">
