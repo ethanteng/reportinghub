@@ -132,7 +132,7 @@ export const usePermissionsStore = create<PermissionsState>((set, get) => ({
     set({ setupGroupAssignments: assignments }),
   
   // Group role wizard
-  groupRoleWizardOpen: false,
+  groupRoleWizardOpen: true,
   setGroupRoleWizardOpen: (open) => set({ groupRoleWizardOpen: open }),
 }))
 
