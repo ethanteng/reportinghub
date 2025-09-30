@@ -195,12 +195,12 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
 
   const handleSelectAll = (checked: boolean, items: (AadGroup | AadUser)[]) => {
     if (checked) {
-      const allIds = new Set([...selectedItems, ...items.map(item => item.id)])
-      setSelectedItems(allIds)
+      const allIds = Array.from(new Set([...selectedItems, ...items.map(item => item.id)]))
+      setSelectedItems(new Set(allIds))
     } else {
       const itemIds = new Set(items.map(item => item.id))
-      const newSelected = new Set([...selectedItems].filter(id => !itemIds.has(id)))
-      setSelectedItems(newSelected)
+      const newSelected = Array.from(selectedItems).filter(id => !itemIds.has(id))
+      setSelectedItems(new Set(newSelected))
     }
   }
 
