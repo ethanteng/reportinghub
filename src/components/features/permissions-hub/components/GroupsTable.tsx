@@ -589,10 +589,10 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                           </TableCell>
                           <TableCell className="font-medium">
                             <div className="flex flex-col">
-                              <span>{group.displayName}</span>
-                              {group.description && (
+                              <span>{(group as AadGroup).displayName}</span>
+                              {(group as AadGroup).description && (
                                 <span className="text-xs text-muted-foreground">
-                                  {group.description}
+                                  {(group as AadGroup).description}
                                 </span>
                               )}
                             </div>
@@ -620,7 +620,7 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                               <Button 
                                 size="sm" 
                                 variant="outline"
-                                onClick={() => handleAssignClick(group)}
+                                onClick={() => handleAssignClick(group as AadGroup)}
                               >
                                 Change
                               </Button>
@@ -726,23 +726,23 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                           </TableCell>
                           <TableCell className="font-medium">
                             <div className="flex flex-col">
-                              <span>{user.displayName}</span>
+                              <span>{(user as AadUser).displayName}</span>
                               <span className="text-xs text-muted-foreground">
-                                {user.userPrincipalName}
+                                {(user as AadUser).userPrincipalName}
                               </span>
                             </div>
                           </TableCell>
                           <TableCell>
                             <span className="text-sm">
-                              {user.mail || 'No email'}
+                              {(user as AadUser).mail || 'No email'}
                             </span>
                           </TableCell>
                           <TableCell>
                             <Badge 
-                              variant={user.accountEnabled ? "default" : "secondary"}
-                              className={user.accountEnabled ? "bg-green-100 text-green-800" : ""}
+                              variant={(user as AadUser).accountEnabled ? "default" : "secondary"}
+                              className={(user as AadUser).accountEnabled ? "bg-green-100 text-green-800" : ""}
                             >
-                              {user.accountEnabled ? 'Active' : 'Disabled'}
+                              {(user as AadUser).accountEnabled ? 'Active' : 'Disabled'}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -782,7 +782,7 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                               <Button 
                                 size="sm" 
                                 variant="outline"
-                                onClick={() => handleUserOverrideClick(user)}
+                                onClick={() => handleUserOverrideClick(user as AadUser)}
                               >
                                 Override
                               </Button>
