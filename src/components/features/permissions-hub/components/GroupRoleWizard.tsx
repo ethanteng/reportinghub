@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -13,13 +13,16 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { Input } from '@/components/ui/input'
 import { 
   Tenant, 
   AadGroup, 
+  AadUser,
   Guid,
   PermissionSet
 } from '@/types/mockAzureAD'
 import { usePermissionsStore } from '@/store/usePermissionsStore'
+import { Search, ChevronLeft, ChevronRight, Users, UserCheck, Filter } from 'lucide-react'
 
 interface GroupRoleWizardProps {
   open: boolean
@@ -47,12 +50,92 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
   const [viewMode, setViewMode] = useState<'groups' | 'users'>('groups')
   const [selectedUsers, setSelectedUsers] = useState<Guid[]>([])
   const [userAssignments, setUserAssignments] = useState<Record<Guid, string>>({})
+  
+  // New state for search and pagination
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(20)
+  const [bulkPermissionSet, setBulkPermissionSet] = useState<string>('')
+  const [showBulkAssign, setShowBulkAssign] = useState(false)
 
   const steps = [
     { id: 1, title: 'Select Users & Groups', description: 'Choose users or groups from your directory' },
     { id: 2, title: 'Assign Roles', description: 'Set permission levels for each selection' },
     { id: 3, title: 'Review Setup', description: 'Confirm your tenant configuration' }
   ]
+
+  // Filter and paginate data
+  const filteredAndPaginatedData = useMemo(() => {
+    const data = viewMode === 'users' ? tenant.users : tenant.groups
+    const filtered = data.filter(item => {
+      if (!searchQuery) return true
+      const query = searchQuery.toLowerCase()
+      if (viewMode === 'users') {
+        const user = item as AadUser
+        return user.displayName.toLowerCase().includes(query) ||
+               user.mail?.toLowerCase().includes(query) ||
+               user.userPrincipalName.toLowerCase().includes(query)
+      } else {
+        const group = item as AadGroup
+        return group.displayName.toLowerCase().includes(query) ||
+               (group.description && group.description.toLowerCase().includes(query))
+      }
+    })
+    
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    const paginated = filtered.slice(startIndex, endIndex)
+    
+    return {
+      items: paginated,
+      totalItems: filtered.length,
+      totalPages: Math.ceil(filtered.length / itemsPerPage),
+      hasNextPage: endIndex < filtered.length,
+      hasPrevPage: currentPage > 1
+    }
+  }, [tenant.users, tenant.groups, viewMode, searchQuery, currentPage, itemsPerPage])
+
+  // Bulk assignment handlers
+  const handleBulkAssign = () => {
+    if (!bulkPermissionSet) return
+    
+    if (viewMode === 'users') {
+      const newAssignments = { ...userAssignments }
+      selectedUsers.forEach(userId => {
+        newAssignments[userId] = bulkPermissionSet
+      })
+      setUserAssignments(newAssignments)
+    } else {
+      const newAssignments = { ...groupAssignments }
+      selectedGroups.forEach(groupId => {
+        newAssignments[groupId] = bulkPermissionSet
+      })
+      setGroupAssignments(newAssignments)
+    }
+    
+    setShowBulkAssign(false)
+    setBulkPermissionSet('')
+  }
+
+  const handleSelectAll = (checked: boolean) => {
+    if (viewMode === 'users') {
+      if (checked) {
+        const allUserIds = filteredAndPaginatedData.items.map(item => (item as AadUser).id)
+        setSelectedUsers([...new Set([...selectedUsers, ...allUserIds])])
+      } else {
+        const currentPageIds = filteredAndPaginatedData.items.map(item => (item as AadUser).id)
+        setSelectedUsers(selectedUsers.filter(id => !currentPageIds.includes(id)))
+      }
+    } else {
+      if (checked) {
+        const allGroupIds = filteredAndPaginatedData.items.map(item => (item as AadGroup).id)
+        setSelectedGroups([...new Set([...selectedGroups, ...allGroupIds])])
+      } else {
+        const currentPageIds = filteredAndPaginatedData.items.map(item => (item as AadGroup).id)
+        setSelectedGroups(selectedGroups.filter(id => !currentPageIds.includes(id)))
+      }
+    }
+  }
 
 
   const handleNext = () => {
@@ -231,35 +314,125 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
       )}
 
       {hasSynced && (
-        <div className="flex items-center gap-2 mb-4">
-          <div className="flex bg-muted rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('users')}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                viewMode === 'users' 
-                  ? 'bg-background text-foreground shadow-sm' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Users
-            </button>
-            <button
-              onClick={() => setViewMode('groups')}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                viewMode === 'groups' 
-                  ? 'bg-background text-foreground shadow-sm' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Groups
-            </button>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex bg-muted rounded-lg p-1">
+                <button
+                  onClick={() => {
+                    setViewMode('users')
+                    setCurrentPage(1)
+                    setSearchQuery('')
+                  }}
+                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                    viewMode === 'users' 
+                      ? 'bg-background text-foreground shadow-sm' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Users className="w-4 h-4 mr-1" />
+                  Users
+                </button>
+                <button
+                  onClick={() => {
+                    setViewMode('groups')
+                    setCurrentPage(1)
+                    setSearchQuery('')
+                  }}
+                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                    viewMode === 'groups' 
+                      ? 'bg-background text-foreground shadow-sm' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <UserCheck className="w-4 h-4 mr-1" />
+                  Groups
+                </button>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {viewMode === 'users' 
+                  ? `${filteredAndPaginatedData.totalItems} user${filteredAndPaginatedData.totalItems !== 1 ? 's' : ''} found`
+                  : `${filteredAndPaginatedData.totalItems} group${filteredAndPaginatedData.totalItems !== 1 ? 's' : ''} found`
+                }
+              </div>
+            </div>
+            
+            {/* Bulk operations */}
+            {(selectedUsers.length > 0 || selectedGroups.length > 0) && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowBulkAssign(true)}
+                >
+                  <Filter className="w-4 h-4 mr-1" />
+                  Bulk Assign ({viewMode === 'users' ? selectedUsers.length : selectedGroups.length})
+                </Button>
+              </div>
+            )}
           </div>
-          <div className="text-xs text-muted-foreground">
-            {viewMode === 'users' 
-              ? `${tenant.users.length} user${tenant.users.length !== 1 ? 's' : ''} synced`
-              : `${tenant.groups.length} group${tenant.groups.length !== 1 ? 's' : ''} synced`
-            }
+
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder={`Search ${viewMode}...`}
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setCurrentPage(1)
+              }}
+              className="pl-10"
+            />
           </div>
+
+          {/* Bulk assignment modal */}
+          {showBulkAssign && (
+            <div className="p-4 border rounded-lg bg-muted/50">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium">Bulk Assign Permission Set</h4>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowBulkAssign(false)}
+                >
+                  ×
+                </Button>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <Label>Permission Set</Label>
+                  <RadioGroup
+                    value={bulkPermissionSet}
+                    onValueChange={setBulkPermissionSet}
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="ps_viewer" id="bulk-viewer" />
+                        <Label htmlFor="bulk-viewer">Viewer</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="ps_editor" id="bulk-editor" />
+                        <Label htmlFor="bulk-editor">Editor</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="ps_admin" id="bulk-admin" />
+                        <Label htmlFor="bulk-admin">Admin</Label>
+                      </div>
+                    </div>
+                  </RadioGroup>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleBulkAssign} disabled={!bulkPermissionSet}>
+                    Apply to {viewMode === 'users' ? selectedUsers.length : selectedGroups.length} {viewMode}
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowBulkAssign(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
       
@@ -276,110 +449,199 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
           </p>
         </div>
       ) : viewMode === 'users' ? (
-        <div className="space-y-2 max-h-96 overflow-y-auto">
-          {tenant.users.map((user) => (
-            <Card key={user.id} className="hover:bg-muted/50 transition-colors">
-              <CardContent className="p-4">
-                <div className="flex items-start space-x-3">
-                  <Checkbox
-                    checked={selectedUsers.includes(user.id)}
-                    onCheckedChange={(checked: boolean) => 
-                      handleUserToggle(user.id, checked)
-                    }
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium">{user.displayName}</span>
-                      {user.userPrincipalName.includes('#EXT#') && (
-                        <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">
-                          Guest
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {user.mail || user.userPrincipalName}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {user.accountEnabled ? 'Active' : 'Inactive'}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-2 max-h-96 overflow-y-auto">
-          {tenant.groups.map((group) => {
-            const isExpanded = expandedGroups.has(group.id)
-            const members = getGroupMembers(group)
-            const hasMoreMembers = group.members.length > members.length
-            
-            return (
-              <Card key={group.id} className="hover:bg-muted/50 transition-colors">
+        <div className="space-y-2">
+          {/* Select All Header */}
+          {filteredAndPaginatedData.items.length > 0 && (
+            <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  checked={filteredAndPaginatedData.items.every(item => 
+                    selectedUsers.includes((item as AadUser).id)
+                  )}
+                  onCheckedChange={handleSelectAll}
+                />
+                <span className="text-sm font-medium">
+                  Select all on this page ({filteredAndPaginatedData.items.length})
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {selectedUsers.length} total selected
+              </div>
+            </div>
+          )}
+          
+          <div className="max-h-96 overflow-y-auto space-y-2">
+            {filteredAndPaginatedData.items.map((user) => (
+              <Card key={user.id} className="hover:bg-muted/50 transition-colors">
                 <CardContent className="p-4">
                   <div className="flex items-start space-x-3">
                     <Checkbox
-                      checked={selectedGroups.includes(group.id)}
+                      checked={selectedUsers.includes((user as AadUser).id)}
                       onCheckedChange={(checked: boolean) => 
-                        handleGroupToggle(group.id, checked)
+                        handleUserToggle((user as AadUser).id, checked)
                       }
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium">{group.displayName}</span>
+                        <span className="font-medium">{(user as AadUser).displayName}</span>
+                        {(user as AadUser).userPrincipalName.includes('#EXT#') && (
+                          <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">
+                            Guest
+                          </span>
+                        )}
                       </div>
-                      {group.description && (
-                        <p className="text-sm text-muted-foreground">
-                          {group.description}
-                        </p>
-                      )}
-                      <div className="flex items-center justify-between mt-2">
-                        <div className="text-xs text-muted-foreground">
-                          {group.members.length} member{group.members.length !== 1 ? 's' : ''}
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            toggleGroupExpansion(group.id)
-                          }}
-                          className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                        >
-                          {isExpanded ? 'Hide members' : 'Show members'}
-                          <svg 
-                            className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </button>
+                      <div className="text-sm text-muted-foreground">
+                        {(user as AadUser).mail || (user as AadUser).userPrincipalName}
                       </div>
-                      
-                      {isExpanded && (
-                        <div className="mt-3 pt-3 border-t border-muted">
-                          <div className="text-xs text-muted-foreground mb-2">Members:</div>
-                          <div className="space-y-1">
-                            {members.map((member, index) => (
-                              <div key={index} className="text-xs text-foreground">
-                                {member}
-                              </div>
-                            ))}
-                            {hasMoreMembers && (
-                              <div className="text-xs text-muted-foreground italic">
-                                ... and {group.members.length - members.length} more
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {(user as AadUser).accountEnabled ? 'Active' : 'Inactive'}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            )
-          })}
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {/* Select All Header */}
+          {filteredAndPaginatedData.items.length > 0 && (
+            <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  checked={filteredAndPaginatedData.items.every(item => 
+                    selectedGroups.includes((item as AadGroup).id)
+                  )}
+                  onCheckedChange={handleSelectAll}
+                />
+                <span className="text-sm font-medium">
+                  Select all on this page ({filteredAndPaginatedData.items.length})
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {selectedGroups.length} total selected
+              </div>
+            </div>
+          )}
+          
+          <div className="max-h-96 overflow-y-auto space-y-2">
+            {filteredAndPaginatedData.items.map((group) => {
+              const isExpanded = expandedGroups.has((group as AadGroup).id)
+              const members = getGroupMembers(group as AadGroup)
+              const hasMoreMembers = (group as AadGroup).members.length > members.length
+              
+              return (
+                <Card key={group.id} className="hover:bg-muted/50 transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-start space-x-3">
+                      <Checkbox
+                        checked={selectedGroups.includes((group as AadGroup).id)}
+                        onCheckedChange={(checked: boolean) => 
+                          handleGroupToggle((group as AadGroup).id, checked)
+                        }
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium">{(group as AadGroup).displayName}</span>
+                        </div>
+                        {(group as AadGroup).description && (
+                          <p className="text-sm text-muted-foreground">
+                            {(group as AadGroup).description}
+                          </p>
+                        )}
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="text-xs text-muted-foreground">
+                            {(group as AadGroup).members.length} member{(group as AadGroup).members.length !== 1 ? 's' : ''}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleGroupExpansion((group as AadGroup).id)
+                            }}
+                            className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                          >
+                            {isExpanded ? 'Hide members' : 'Show members'}
+                            <svg 
+                              className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                              fill="none" 
+                              stroke="currentColor" 
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                        </div>
+                        
+                        {isExpanded && (
+                          <div className="mt-3 pt-3 border-t border-muted">
+                            <div className="text-xs text-muted-foreground mb-2">Members:</div>
+                            <div className="space-y-1">
+                              {members.map((member, index) => (
+                                <div key={index} className="text-xs text-foreground">
+                                  {member}
+                                </div>
+                              ))}
+                              {hasMoreMembers && (
+                                <div className="text-xs text-muted-foreground italic">
+                                  ... and {(group as AadGroup).members.length - members.length} more
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {hasSynced && filteredAndPaginatedData.totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4 border-t">
+          <div className="text-sm text-muted-foreground">
+            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredAndPaginatedData.totalItems)} of {filteredAndPaginatedData.totalItems} {viewMode}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={!filteredAndPaginatedData.hasPrevPage}
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </Button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, filteredAndPaginatedData.totalPages) }, (_, i) => {
+                const pageNum = i + 1
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(pageNum)}
+                    className="w-8 h-8 p-0"
+                  >
+                    {pageNum}
+                  </Button>
+                )
+              })}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(filteredAndPaginatedData.totalPages, prev + 1))}
+              disabled={!filteredAndPaginatedData.hasNextPage}
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       )}
     </div>
