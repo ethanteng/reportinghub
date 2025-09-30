@@ -121,7 +121,8 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
     if (viewMode === 'users') {
       if (checked) {
         const allUserIds = filteredAndPaginatedData.items.map(item => (item as AadUser).id)
-        setSelectedUsers([...new Set([...selectedUsers, ...allUserIds])])
+        const combinedIds = Array.from(new Set([...selectedUsers, ...allUserIds]))
+        setSelectedUsers(combinedIds)
       } else {
         const currentPageIds = filteredAndPaginatedData.items.map(item => (item as AadUser).id)
         setSelectedUsers(selectedUsers.filter(id => !currentPageIds.includes(id)))
@@ -129,7 +130,8 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
     } else {
       if (checked) {
         const allGroupIds = filteredAndPaginatedData.items.map(item => (item as AadGroup).id)
-        setSelectedGroups([...new Set([...selectedGroups, ...allGroupIds])])
+        const combinedIds = Array.from(new Set([...selectedGroups, ...allGroupIds]))
+        setSelectedGroups(combinedIds)
       } else {
         const currentPageIds = filteredAndPaginatedData.items.map(item => (item as AadGroup).id)
         setSelectedGroups(selectedGroups.filter(id => !currentPageIds.includes(id)))
