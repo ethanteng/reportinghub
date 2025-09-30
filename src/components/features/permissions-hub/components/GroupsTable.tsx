@@ -500,7 +500,7 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                         <div className="flex flex-col">
                           <span className="font-medium">{report.name}</span>
                           <span className="text-xs text-muted-foreground">
-                            {report.description || 'No description'}
+                            Path: {report.path}
                           </span>
                         </div>
                       </Label>
