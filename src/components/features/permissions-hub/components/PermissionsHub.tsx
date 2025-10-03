@@ -62,14 +62,14 @@ export function PermissionsHub() {
             variant="outline"
             onClick={() => setGroupRoleWizardOpen(true)}
           >
-            Setup Wizard
+            Permissions Setup Wizard
           </Button>
-          {/* Setup Wizard button temporarily hidden */}
+          {/* Permissions Setup Wizard button temporarily hidden */}
           {/* <Button 
             variant="outline"
             onClick={() => setSetupWizardOpen(true)}
           >
-            Setup Wizard
+            Permissions Setup Wizard
           </Button> */}
         </div>
       </header>

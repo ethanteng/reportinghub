@@ -264,7 +264,7 @@ export function SetupWizard({ open, onOpenChange, tenant }: SetupWizardProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Setup Wizard</DialogTitle>
+          <DialogTitle>Report Permissions Setup Wizard</DialogTitle>
           <DialogDescription>
             Configure your tenant's permission structure in a few simple steps.
           </DialogDescription>

@@ -62,6 +62,22 @@ export function PermissionSetsTable() {
     }
   }
 
+  const handleCopy = (permissionSet: PermissionSet) => {
+    // Create a copy with a new name and ID
+    const copiedPermissionSet: PermissionSet = {
+      ...permissionSet,
+      id: `ps_${permissionSet.name.toLowerCase().replace(/\s+/g, '_')}_copy_${Date.now()}`,
+      name: `${permissionSet.name} (Copy)`,
+      description: `Copy of ${permissionSet.description}`
+    }
+    setEditingPermissionSet(copiedPermissionSet)
+    setEditModalOpen(true)
+  }
+
+  const isDefaultPermissionSet = (ps: PermissionSet) => {
+    return ['ps_viewer', 'ps_editor', 'ps_admin'].includes(ps.id)
+  }
+
   return (
     <>
       <Card>
@@ -88,10 +104,20 @@ export function PermissionSetsTable() {
               {permissionSets.map((ps) => {
                 const usage = getPermissionSetUsage(ps.id, assignments)
                 const inUse = isPermissionSetInUse(ps.id, assignments)
+                const isDefault = isDefaultPermissionSet(ps)
                 
                 return (
-                  <TableRow key={ps.id}>
-                    <TableCell className="font-medium">{ps.name}</TableCell>
+                  <TableRow key={ps.id} className={isDefault ? "bg-slate-100/50" : "bg-blue-100/50"}>
+                    <TableCell className="font-medium">
+                      <div className="flex flex-col">
+                        <span>{ps.name}</span>
+                        {isDefault && (
+                          <span className="text-xs text-muted-foreground font-normal italic">
+                            Pre-defined
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>{ps.description}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-0.5">
@@ -116,7 +142,7 @@ export function PermissionSetsTable() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm">
+                      <span className="text-sm text-muted-foreground">
                         {usage} assignment{usage !== 1 ? 's' : ''}
                       </span>
                     </TableCell>
@@ -125,18 +151,29 @@ export function PermissionSetsTable() {
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => handleEdit(ps)}
+                          onClick={() => handleCopy(ps)}
                         >
-                          Edit
+                          Copy
                         </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleDelete(ps)}
-                          disabled={inUse}
-                        >
-                          Delete
-                        </Button>
+                        {!isDefault && (
+                          <>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleEdit(ps)}
+                            >
+                              Edit
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleDelete(ps)}
+                              disabled={inUse}
+                            >
+                              Delete
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

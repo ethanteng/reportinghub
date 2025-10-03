@@ -882,7 +882,7 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Tenant Setup Wizard</DialogTitle>
+          <DialogTitle>Report Permissions Setup Wizard</DialogTitle>
           <DialogDescription>
             Set up permissions for {tenant.displayName} by assigning roles to groups from your directory. Simple, safe, and reversible.
           </DialogDescription>
