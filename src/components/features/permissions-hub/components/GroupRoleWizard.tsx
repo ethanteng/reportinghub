@@ -48,15 +48,85 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
   const [hasSynced, setHasSynced] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<Set<Guid>>(new Set())
   const [viewMode, setViewMode] = useState<'groups' | 'users'>('groups')
+  
+  // Search-first state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<AadGroup[]>([])
+  const [searchPage, setSearchPage] = useState(1)
+  const [searchPageSize] = useState(50)
+  const [totalAvailableGroups] = useState(12500) // Mock large dataset
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
   const [selectedUsers, setSelectedUsers] = useState<Guid[]>([])
   const [userAssignments, setUserAssignments] = useState<Record<Guid, string>>({})
-  
-  // New state for search and pagination
-  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(20)
   const [bulkPermissionSet, setBulkPermissionSet] = useState<string>('')
   const [showBulkAssign, setShowBulkAssign] = useState(false)
+
+  // Mock large dataset for search
+  const generateMockGroups = (count: number): AadGroup[] => {
+    const departments = ['IT', 'Sales', 'Marketing', 'HR', 'Finance', 'Operations', 'Legal', 'Engineering', 'Support', 'Executive']
+    const roles = ['Administrators', 'Managers', 'Specialists', 'Analysts', 'Coordinators', 'Directors', 'Leads', 'Associates']
+    const locations = ['North', 'South', 'East', 'West', 'Central', 'Global', 'Regional', 'Local']
+    
+    return Array.from({ length: count }, (_, i) => ({
+      "@odata.type": "#microsoft.graph.group",
+      id: `mock-group-${i + 1}` as Guid,
+      displayName: `${departments[i % departments.length]} ${roles[i % roles.length]} ${locations[i % locations.length]}`,
+      description: `${departments[i % departments.length]} team members with ${roles[i % roles.length].toLowerCase()} responsibilities`,
+      securityEnabled: Math.random() > 0.2,
+      groupTypes: Math.random() > 0.7 ? ['Unified'] : [],
+      members: []
+    }))
+  }
+
+  const mockGroups: AadGroup[] = generateMockGroups(12500)
+
+  // Debounced search functionality
+  const handleSearch = (query: string) => {
+    setSearchQuery(query)
+    setSearchPage(1) // Reset to first page on new search
+    
+    // Clear existing timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout)
+    }
+    
+    if (query.trim().length < 2) {
+      setSearchResults([])
+      setIsSearching(false)
+      return
+    }
+
+    setIsSearching(true)
+    
+    // Debounce search by 300ms
+    const timeout = setTimeout(() => {
+      const filteredGroups = mockGroups.filter(group => 
+        group.displayName.toLowerCase().includes(query.toLowerCase()) ||
+        (group.description && group.description.toLowerCase().includes(query.toLowerCase()))
+      )
+
+      setSearchResults(filteredGroups)
+      setIsSearching(false)
+    }, 300)
+    
+    setSearchTimeout(timeout)
+  }
+
+  // Get paginated search results
+  const getPaginatedSearchResults = () => {
+    const startIndex = (searchPage - 1) * searchPageSize
+    const endIndex = startIndex + searchPageSize
+    return {
+      groups: searchResults.slice(startIndex, endIndex),
+      totalGroups: searchResults.length,
+      totalPages: Math.ceil(searchResults.length / searchPageSize),
+      hasNextPage: endIndex < searchResults.length,
+      hasPrevPage: searchPage > 1
+    }
+  }
 
   const steps = [
     { id: 1, title: 'Select Users & Groups', description: 'Choose users or groups from your directory' },
@@ -317,6 +387,11 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
 
       {hasSynced && (
         <div className="space-y-4">
+          {/* Total count display */}
+          <div className="text-sm text-muted-foreground">
+            {totalAvailableGroups.toLocaleString()} groups available • Start typing to search
+          </div>
+          
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="flex bg-muted rounded-lg p-1">
@@ -325,6 +400,7 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
                     setViewMode('users')
                     setCurrentPage(1)
                     setSearchQuery('')
+                    setSearchResults([])
                   }}
                   className={`px-3 py-1 text-sm rounded-md transition-colors ${
                     viewMode === 'users' 
@@ -340,6 +416,7 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
                     setViewMode('groups')
                     setCurrentPage(1)
                     setSearchQuery('')
+                    setSearchResults([])
                   }}
                   className={`px-3 py-1 text-sm rounded-md transition-colors ${
                     viewMode === 'groups' 
@@ -354,7 +431,7 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
               <div className="text-xs text-muted-foreground">
                 {viewMode === 'users' 
                   ? `${filteredAndPaginatedData.totalItems} user${filteredAndPaginatedData.totalItems !== 1 ? 's' : ''} found`
-                  : `${filteredAndPaginatedData.totalItems} group${filteredAndPaginatedData.totalItems !== 1 ? 's' : ''} found`
+                  : (searchResults.length > 0 ? `${searchResults.length.toLocaleString()} found` : `${totalAvailableGroups.toLocaleString()} available`)
                 }
               </div>
             </div>
@@ -381,11 +458,20 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
               placeholder={`Search ${viewMode}...`}
               value={searchQuery}
               onChange={(e) => {
-                setSearchQuery(e.target.value)
-                setCurrentPage(1)
+                if (viewMode === 'groups') {
+                  handleSearch(e.target.value)
+                } else {
+                  setSearchQuery(e.target.value)
+                  setCurrentPage(1)
+                }
               }}
               className="pl-10"
             />
+            {isSearching && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+              </div>
+            )}
           </div>
 
           {/* Bulk assignment modal */}
@@ -507,28 +593,47 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
         </div>
       ) : (
         <div className="space-y-2">
-          {/* Select All Header */}
-          {filteredAndPaginatedData.items.length > 0 && (
-            <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  checked={filteredAndPaginatedData.items.every(item => 
-                    selectedGroups.includes((item as AadGroup).id)
-                  )}
-                  onCheckedChange={handleSelectAll}
-                />
-                <span className="text-sm font-medium">
-                  Select all on this page ({filteredAndPaginatedData.items.length})
-                </span>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {selectedGroups.length} total selected
-              </div>
-            </div>
-          )}
-          
-          <div className="max-h-96 overflow-y-auto space-y-2">
-            {filteredAndPaginatedData.items.map((group) => {
+          {/* Search results or empty state */}
+          {searchQuery.length >= 2 ? (
+            <>
+              {/* Search results with pagination */}
+              {searchResults.length > 0 ? (
+                <>
+                  {/* Select All Header for search results */}
+                  {(() => {
+                    const paginatedResults = getPaginatedSearchResults()
+                    return (
+                      <>
+                        {paginatedResults.groups.length > 0 && (
+                          <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                checked={paginatedResults.groups.every(group => 
+                                  selectedGroups.includes(group.id)
+                                )}
+                                onCheckedChange={(checked: boolean) => {
+                                  if (checked) {
+                                    const allGroupIds = paginatedResults.groups.map(group => group.id)
+                                    const combinedIds = Array.from(new Set([...selectedGroups, ...allGroupIds]))
+                                    setSelectedGroups(combinedIds)
+                                  } else {
+                                    const currentPageIds = paginatedResults.groups.map(group => group.id)
+                                    setSelectedGroups(selectedGroups.filter(id => !currentPageIds.includes(id)))
+                                  }
+                                }}
+                              />
+                              <span className="text-sm font-medium">
+                                Select all on this page ({paginatedResults.groups.length})
+                              </span>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {selectedGroups.length} total selected • {paginatedResults.totalGroups.toLocaleString()} found
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="max-h-96 overflow-y-auto space-y-2">
+                          {paginatedResults.groups.map((group) => {
               const isExpanded = expandedGroups.has((group as AadGroup).id)
               const members = getGroupMembers(group as AadGroup)
               const hasMoreMembers = (group as AadGroup).members.length > members.length
@@ -597,8 +702,56 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
                   </CardContent>
                 </Card>
               )
-            })}
-          </div>
+                          })}
+                        </div>
+                        
+                        {/* Pagination controls for search results */}
+                        {paginatedResults.totalPages > 1 && (
+                          <div className="flex items-center justify-between pt-4 border-t">
+                            <div className="text-sm text-muted-foreground">
+                              Showing {((searchPage - 1) * searchPageSize) + 1} to {Math.min(searchPage * searchPageSize, paginatedResults.totalGroups)} of {paginatedResults.totalGroups.toLocaleString()} results
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSearchPage(prev => Math.max(1, prev - 1))}
+                                disabled={!paginatedResults.hasPrevPage}
+                              >
+                                <ChevronLeft className="w-4 h-4" />
+                                Previous
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSearchPage(prev => Math.min(paginatedResults.totalPages, prev + 1))}
+                                disabled={!paginatedResults.hasNextPage}
+                              >
+                                Next
+                                <ChevronRight className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()}
+                </>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Search className="h-8 w-8 mx-auto mb-2" />
+                  <p>No groups found matching "{searchQuery}"</p>
+                  <p className="text-xs mt-1">Try a different search term or check spelling</p>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Search className="h-8 w-8 mx-auto mb-2" />
+              <p>Type at least 2 characters to search groups</p>
+              <p className="text-xs mt-1">Search by name or description</p>
+            </div>
+          )}
         </div>
       )}
 

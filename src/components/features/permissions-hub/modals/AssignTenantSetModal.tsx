@@ -53,6 +53,11 @@ export function AssignTenantSetModal({
   user,
   tenant 
 }: AssignTenantSetModalProps) {
+  
+  // Helper function to determine if a permission set is pre-defined
+  const isDefaultPermissionSet = (ps: PermissionSet) => {
+    return ['ps_viewer', 'ps_editor', 'ps_admin'].includes(ps.id)
+  }
   const { permissionSets, assignments, addAssignment, updateAssignment, removeAssignment } = usePermissionsStore()
   const [selectedPermissionSetId, setSelectedPermissionSetId] = useState<string>('')
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -196,7 +201,7 @@ export function AssignTenantSetModal({
             </div>
 
             {/* No Access Option */}
-            <div className="border rounded-lg p-3">
+            <div className="border border-orange-200 bg-orange-50 rounded-lg p-3">
               <div className="flex items-center space-x-3">
                 <Checkbox
                   id="no-access"
@@ -210,9 +215,12 @@ export function AssignTenantSetModal({
                 />
                 <Label htmlFor="no-access" className="flex-1 cursor-pointer">
                   <div className="flex flex-col">
-                    <span className="font-medium text-base">No Access</span>
-                    <span className="text-sm text-muted-foreground">
-                      Remove all permissions for this group
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-base text-orange-900">Remove Access</span>
+                      <Badge variant="outline" className="text-xs border-orange-300 text-orange-700">No Access</Badge>
+                    </div>
+                    <span className="text-sm text-orange-700 mt-1">
+                      Revoke all permissions for this {isUser ? 'user' : 'group'}
                     </span>
                   </div>
                 </Label>
@@ -237,9 +245,10 @@ export function AssignTenantSetModal({
                   const isExpanded = expandedSets.has(ps.id)
                   const capabilities = groupCapabilities(ps.capabilities)
                   const hasAnyCapabilities = Object.values(capabilities).some(group => group.length > 0)
+                  const isDefault = isDefaultPermissionSet(ps)
                   
                   return (
-                    <div key={ps.id} className="border rounded-lg p-3 hover:bg-muted/50 transition-colors">
+                    <div key={ps.id} className={`border rounded-lg p-3 hover:bg-muted/50 transition-colors ${isDefault ? 'bg-slate-100/50' : 'bg-blue-100/50'}`}>
                       <div className="flex items-start space-x-3">
                         <RadioGroupItem value={ps.id} id={ps.id} className="mt-1" />
                         <div className="flex-1">
@@ -247,6 +256,9 @@ export function AssignTenantSetModal({
                             <Label htmlFor={ps.id} className="cursor-pointer flex-1">
                               <div className="flex flex-col">
                                 <span className="font-medium text-base">{ps.name}</span>
+                                {isDefault && (
+                                  <span className="text-xs text-muted-foreground font-normal italic">Pre-defined</span>
+                                )}
                                 <span className="text-sm text-muted-foreground mt-1">
                                   {ps.description}
                                 </span>

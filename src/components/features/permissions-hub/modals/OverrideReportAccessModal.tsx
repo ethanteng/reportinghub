@@ -54,6 +54,11 @@ export function OverrideReportAccessModal({
   group, 
   tenant 
 }: OverrideReportAccessModalProps) {
+  
+  // Helper function to determine if a permission set is pre-defined
+  const isDefaultPermissionSet = (ps: PermissionSet) => {
+    return ['ps_viewer', 'ps_editor', 'ps_admin'].includes(ps.id)
+  }
   const { 
     permissionSets, 
     assignments, 
@@ -238,137 +243,71 @@ export function OverrideReportAccessModal({
                 className="space-y-2"
                 disabled={noAccess}
               >
-                {/* Default Permission Sets */}
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-muted-foreground mb-2">Default Permission Sets</div>
-                  {filteredPermissionSets.filter(ps => ['ps_viewer', 'ps_editor', 'ps_admin'].includes(ps.id)).map((ps) => {
-                    const isExpanded = expandedSets.has(ps.id)
-                    const capabilities = groupCapabilities(ps.capabilities)
-                    const hasAnyCapabilities = Object.values(capabilities).some(group => group.length > 0)
-                    
-                    return (
-                      <div key={ps.id} className="border border-green-200 bg-green-50 rounded-lg p-3 hover:bg-green-100 transition-colors">
-                        <div className="flex items-start space-x-3">
-                          <RadioGroupItem value={ps.id} id={ps.id} className="mt-1" />
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor={ps.id} className="cursor-pointer flex-1">
-                                <div className="flex flex-col">
-                                  <span className="font-medium text-base text-green-900">{ps.name}</span>
-                                  <span className="text-sm text-green-700 mt-1">
-                                    {ps.description}
-                                  </span>
-                                </div>
-                              </Label>
-                              {hasAnyCapabilities && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => toggleExpanded(ps.id)}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  {isExpanded ? (
-                                    <ChevronDown className="h-4 w-4" />
-                                  ) : (
-                                    <ChevronRight className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              )}
-                            </div>
-                            
-                            {/* Expanded capabilities view */}
-                            {isExpanded && hasAnyCapabilities && (
-                              <div className="mt-3 space-y-3">
-                                {Object.entries(capabilities).map(([category, permissions]) => 
-                                  permissions.length > 0 && (
-                                    <div key={category} className="space-y-1">
-                                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                        {category}
-                                      </span>
-                                      <div className="flex flex-wrap gap-1">
-                                        {permissions.map((permission) => (
-                                          <Badge key={permission} variant="default" className="text-xs">
-                                            {permission}
-                                          </Badge>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )
+                {filteredPermissionSets.map((ps) => {
+                  const isExpanded = expandedSets.has(ps.id)
+                  const capabilities = groupCapabilities(ps.capabilities)
+                  const hasAnyCapabilities = Object.values(capabilities).some(group => group.length > 0)
+                  const isDefault = isDefaultPermissionSet(ps)
+                  
+                  return (
+                    <div key={ps.id} className={`border rounded-lg p-3 hover:bg-muted/50 transition-colors ${isDefault ? 'bg-slate-100/50' : 'bg-blue-100/50'}`}>
+                      <div className="flex items-start space-x-3">
+                        <RadioGroupItem value={ps.id} id={ps.id} className="mt-1" />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor={ps.id} className="cursor-pointer flex-1">
+                              <div className="flex flex-col">
+                                <span className="font-medium text-base">{ps.name}</span>
+                                {isDefault && (
+                                  <span className="text-xs text-muted-foreground font-normal italic">Pre-defined</span>
                                 )}
+                                <span className="text-sm text-muted-foreground mt-1">
+                                  {ps.description}
+                                </span>
                               </div>
+                            </Label>
+                            {hasAnyCapabilities && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleExpanded(ps.id)}
+                                className="h-6 w-6 p-0"
+                              >
+                                {isExpanded ? (
+                                  <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4" />
+                                )}
+                              </Button>
                             )}
                           </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-
-                {/* Custom Permission Sets */}
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-muted-foreground mb-2">Custom Permission Sets</div>
-                  {filteredPermissionSets.filter(ps => !['ps_viewer', 'ps_editor', 'ps_admin'].includes(ps.id)).map((ps) => {
-                    const isExpanded = expandedSets.has(ps.id)
-                    const capabilities = groupCapabilities(ps.capabilities)
-                    const hasAnyCapabilities = Object.values(capabilities).some(group => group.length > 0)
-                    
-                    return (
-                      <div key={ps.id} className="border border-purple-200 bg-purple-50 rounded-lg p-3 hover:bg-purple-100 transition-colors">
-                        <div className="flex items-start space-x-3">
-                          <RadioGroupItem value={ps.id} id={ps.id} className="mt-1" />
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor={ps.id} className="cursor-pointer flex-1">
-                                <div className="flex flex-col">
-                                  <span className="font-medium text-base text-purple-900">{ps.name}</span>
-                                  <span className="text-sm text-purple-700 mt-1">
-                                    {ps.description}
-                                  </span>
-                                </div>
-                              </Label>
-                              {hasAnyCapabilities && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => toggleExpanded(ps.id)}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  {isExpanded ? (
-                                    <ChevronDown className="h-4 w-4" />
-                                  ) : (
-                                    <ChevronRight className="h-4 w-4" />
-                                  )}
-                                </Button>
+                          
+                          {/* Expanded capabilities view */}
+                          {isExpanded && hasAnyCapabilities && (
+                            <div className="mt-3 space-y-3">
+                              {Object.entries(capabilities).map(([category, permissions]) => 
+                                permissions.length > 0 && (
+                                  <div key={category} className="space-y-1">
+                                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                      {category}
+                                    </span>
+                                    <div className="flex flex-wrap gap-1">
+                                      {permissions.map((permission) => (
+                                        <Badge key={permission} variant="default" className="text-xs">
+                                          {permission}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )
                               )}
                             </div>
-                            
-                            {/* Expanded capabilities view */}
-                            {isExpanded && hasAnyCapabilities && (
-                              <div className="mt-3 space-y-3">
-                                {Object.entries(capabilities).map(([category, permissions]) => 
-                                  permissions.length > 0 && (
-                                    <div key={category} className="space-y-1">
-                                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                        {category}
-                                      </span>
-                                      <div className="flex flex-wrap gap-1">
-                                        {permissions.map((permission) => (
-                                          <Badge key={permission} variant="default" className="text-xs">
-                                            {permission}
-                                          </Badge>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )
-                                )}
-                              </div>
-                            )}
-                          </div>
+                          )}
                         </div>
                       </div>
-                    )
-                  })}
-                </div>
+                    </div>
+                  )
+                })}
               </RadioGroup>
             </div>
 

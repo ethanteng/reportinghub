@@ -25,45 +25,25 @@ interface GroupsTableProps {
   tenant: Tenant
 }
 
-// Fake data for search functionality
-const fakeGroups: AadGroup[] = [
-  {
+// Mock large dataset simulating 10K+ groups
+const generateMockGroups = (count: number): AadGroup[] => {
+  const departments = ['IT', 'Sales', 'Marketing', 'HR', 'Finance', 'Operations', 'Legal', 'Engineering', 'Support', 'Executive']
+  const roles = ['Administrators', 'Managers', 'Specialists', 'Analysts', 'Coordinators', 'Directors', 'Leads', 'Associates']
+  const locations = ['North', 'South', 'East', 'West', 'Central', 'Global', 'Regional', 'Local']
+  
+  return Array.from({ length: count }, (_, i) => ({
     "@odata.type": "#microsoft.graph.group",
-    id: "fake-group-1" as Guid,
-    displayName: "IT Administrators",
-    description: "IT department administrators",
-    securityEnabled: true,
-    groupTypes: [],
+    id: `mock-group-${i + 1}` as Guid,
+    displayName: `${departments[i % departments.length]} ${roles[i % roles.length]} ${locations[i % locations.length]}`,
+    description: `${departments[i % departments.length]} team members with ${roles[i % roles.length].toLowerCase()} responsibilities`,
+    securityEnabled: Math.random() > 0.2,
+    groupTypes: Math.random() > 0.7 ? ['Unified'] : [],
     members: []
-  },
-  {
-    "@odata.type": "#microsoft.graph.group",
-    id: "fake-group-2" as Guid,
-    displayName: "Sales Team",
-    description: "Sales and marketing team members",
-    securityEnabled: true,
-    groupTypes: [],
-    members: []
-  },
-  {
-    "@odata.type": "#microsoft.graph.group",
-    id: "fake-group-3" as Guid,
-    displayName: "HR Department",
-    description: "Human resources department",
-    securityEnabled: true,
-    groupTypes: [],
-    members: []
-  },
-  {
-    "@odata.type": "#microsoft.graph.group",
-    id: "fake-group-4" as Guid,
-    displayName: "Executive Team",
-    description: "C-level executives and senior management",
-    securityEnabled: true,
-    groupTypes: [],
-    members: []
-  }
-]
+  }))
+}
+
+// Simulate large dataset - 12,500 groups total
+const mockGroups: AadGroup[] = generateMockGroups(12500)
 
 const fakeUsers: AadUser[] = [
   {
@@ -116,10 +96,16 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
   const [searchResults, setSearchResults] = useState<{groups: AadGroup[], users: AadUser[]}>({groups: [], users: []})
+  const [searchPage, setSearchPage] = useState(1)
+  const [searchPageSize] = useState(50)
+  const [totalAvailableGroups] = useState(mockGroups.length)
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchMode, setSearchMode] = useState<'groups' | 'users'>('groups')
+  const [userAdded, setUserAdded] = useState(false)
+  const [isAddingUser, setIsAddingUser] = useState(false)
   
   // New state for enhanced functionality
   const [selectedItems, setSelectedItems] = useState<Set<Guid>>(new Set())
-  const [bulkPermissionSet, setBulkPermissionSet] = useState<string>('')
   const [showBulkAssign, setShowBulkAssign] = useState(false)
   const [reportAssignMode, setReportAssignMode] = useState<'group' | 'user' | null>(null)
   const [reportAssignTarget, setReportAssignTarget] = useState<AadGroup | AadUser | null>(null)
@@ -144,26 +130,59 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
     setAssignModalOpen(true)
   }
 
-  // Search functionality
+  // Debounced search functionality
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
+  
   const handleSearch = (query: string) => {
     setSearchQuery(query)
+    setSearchPage(1) // Reset to first page on new search
+    
+    // Clear existing timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout)
+    }
+    
     if (query.trim().length < 2) {
       setSearchResults({groups: [], users: []})
+      setIsSearching(false)
       return
     }
 
-    const filteredGroups = fakeGroups.filter(group => 
-      group.displayName.toLowerCase().includes(query.toLowerCase()) ||
-      (group.description && group.description.toLowerCase().includes(query.toLowerCase()))
-    )
+    setIsSearching(true)
+    
+    // Debounce search by 300ms
+    const timeout = setTimeout(() => {
+      const filteredGroups = mockGroups.filter(group => 
+        group.displayName.toLowerCase().includes(query.toLowerCase()) ||
+        (group.description && group.description.toLowerCase().includes(query.toLowerCase()))
+      )
 
-    const filteredUsers = fakeUsers.filter(user => 
-      user.displayName.toLowerCase().includes(query.toLowerCase()) ||
-      user.mail?.toLowerCase().includes(query.toLowerCase()) ||
-      user.userPrincipalName.toLowerCase().includes(query.toLowerCase())
-    )
+      const filteredUsers = fakeUsers.filter(user => 
+        user.displayName.toLowerCase().includes(query.toLowerCase()) ||
+        user.mail?.toLowerCase().includes(query.toLowerCase()) ||
+        user.userPrincipalName.toLowerCase().includes(query.toLowerCase())
+      )
 
-    setSearchResults({groups: filteredGroups, users: filteredUsers})
+      setSearchResults({groups: filteredGroups, users: filteredUsers})
+      setIsSearching(false)
+    }, 300)
+    
+    setSearchTimeout(timeout)
+  }
+
+  // Get paginated search results
+  const getPaginatedSearchResults = () => {
+    const startIndex = (searchPage - 1) * searchPageSize
+    const endIndex = startIndex + searchPageSize
+    return {
+      groups: searchResults.groups.slice(startIndex, endIndex),
+      users: searchResults.users.slice(startIndex, endIndex),
+      totalGroups: searchResults.groups.length,
+      totalUsers: searchResults.users.length,
+      totalPages: Math.ceil(Math.max(searchResults.groups.length, searchResults.users.length) / searchPageSize),
+      hasNextPage: endIndex < Math.max(searchResults.groups.length, searchResults.users.length),
+      hasPrevPage: searchPage > 1
+    }
   }
 
   const handleAddGroup = (group: AadGroup) => {
@@ -177,9 +196,21 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
   const handleAddUser = (user: AadUser) => {
     // In a real app, this would add the user to the tenant
     console.log('Adding user:', user.displayName)
-    setShowSearch(false)
-    setSearchQuery('')
-    setSearchResults({groups: [], users: []})
+    setIsAddingUser(true)
+    
+    // Simulate searching for the user with a delay
+    setTimeout(() => {
+      setIsAddingUser(false)
+      setUserAdded(true)
+      
+      // Reset the success state after 2 seconds
+      setTimeout(() => {
+        setUserAdded(false)
+        setShowSearch(false)
+        setSearchQuery('')
+        setSearchResults({groups: [], users: []})
+      }, 2000)
+    }, 1500) // 1.5 second delay to simulate searching
   }
 
   // New handlers for enhanced functionality
@@ -207,8 +238,8 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
     }
   }
 
-  const handleBulkAssign = () => {
-    if (!bulkPermissionSet) return
+  const handleBulkReportAssign = () => {
+    if (selectedReports.size === 0) return
     
     selectedItems.forEach(itemId => {
       // Check if it's a group or user
@@ -216,18 +247,22 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
       const isUser = tenant.users.some(u => u.id === itemId)
       
       if (isGroup || isUser) {
-        addAssignment({
-          tenantId: tenant.tenantId,
-          aadGroupId: itemId,
-          permissionSetId: bulkPermissionSet,
-          scope: 'Tenant',
-          inherited: false
+        // Assign each selected report to this group/user
+        selectedReports.forEach(reportId => {
+          addAssignment({
+            tenantId: tenant.tenantId,
+            aadGroupId: itemId,
+            permissionSetId: 'ps_viewer', // Default to viewer for bulk assignment
+            scope: 'Report',
+            reportId: reportId,
+            inherited: false
+          })
         })
       }
     })
     
     setShowBulkAssign(false)
-    setBulkPermissionSet('')
+    setSelectedReports(new Set())
     setSelectedItems(new Set())
   }
 
@@ -330,89 +365,265 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                   Bulk Assign ({selectedItems.size})
                 </Button>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowSearch(!showSearch)}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Add Users & Groups
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowSearch(true)
+                    setSearchMode('groups')
+                    setSearchQuery('')
+                    setSearchResults({groups: [], users: []})
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Search className="h-4 w-4" />
+                  Search Groups
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowSearch(true)
+                    setSearchMode('users')
+                    setSearchQuery('')
+                    setSearchResults({groups: [], users: []})
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add User by Email
+                </Button>
+              </div>
             </div>
           </div>
           
           {showSearch && (
             <div className="mt-4 space-y-4">
+              {/* Mode-specific header */}
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  {searchMode === 'groups' 
+                    ? `${totalAvailableGroups.toLocaleString()} groups available • Start typing to search`
+                    : 'Add a user by entering their email address'
+                  }
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSearch(false)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="Search for users and groups to add..."
+                  placeholder={searchMode === 'groups' 
+                    ? "Search for groups to add..." 
+                    : "Enter user email address..."
+                  }
                   value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
+                  onChange={(e) => {
+                    if (searchMode === 'groups') {
+                      handleSearch(e.target.value)
+                    } else {
+                      setSearchQuery(e.target.value)
+                    }
+                  }}
                   className="pl-10"
                 />
+                {isSearching && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                  </div>
+                )}
               </div>
               
-              {(searchResults.groups.length > 0 || searchResults.users.length > 0) && (
-                <div className="space-y-4">
-                  {searchResults.groups.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Groups</h4>
-                      <div className="space-y-2">
-                        {searchResults.groups.map((group) => (
-                          <div key={group.id} className="flex items-center justify-between p-3 border rounded-lg">
+              {/* Mode-specific content */}
+              {searchMode === 'groups' ? (
+                /* Groups search results */
+                (searchResults.groups.length > 0 || searchResults.users.length > 0) && (
+                  <div className="space-y-4">
+                    {(() => {
+                      const paginatedResults = getPaginatedSearchResults()
+                      return (
+                        <>
+                          {paginatedResults.groups.length > 0 && (
                             <div>
-                              <div className="font-medium">{group.displayName}</div>
-                              {group.description && (
-                                <div className="text-sm text-muted-foreground">{group.description}</div>
-                              )}
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-sm font-medium text-muted-foreground">
+                                  Groups ({paginatedResults.totalGroups.toLocaleString()} found)
+                                </h4>
+                                {paginatedResults.totalPages > 1 && (
+                                  <div className="text-xs text-muted-foreground">
+                                    Page {searchPage} of {paginatedResults.totalPages}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="space-y-2">
+                                {paginatedResults.groups.map((group) => (
+                                  <div key={group.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                    <div>
+                                      <div className="font-medium">{group.displayName}</div>
+                                      {group.description && (
+                                        <div className="text-sm text-muted-foreground">{group.description}</div>
+                                      )}
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleAddGroup(group)}
+                                      className="flex items-center gap-1"
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                      Add
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                            <Button
-                              size="sm"
-                              onClick={() => handleAddGroup(group)}
-                              className="flex items-center gap-1"
-                            >
-                              <Plus className="h-3 w-3" />
-                              Add
-                            </Button>
+                          )}
+                          
+                          {/* Pagination controls */}
+                          {paginatedResults.totalPages > 1 && (
+                            <div className="flex items-center justify-between pt-4 border-t">
+                              <div className="text-sm text-muted-foreground">
+                                Showing {((searchPage - 1) * searchPageSize) + 1} to {Math.min(searchPage * searchPageSize, paginatedResults.totalGroups)} of {paginatedResults.totalGroups.toLocaleString()} results
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setSearchPage(prev => Math.max(1, prev - 1))}
+                                  disabled={!paginatedResults.hasPrevPage}
+                                >
+                                  <ChevronLeft className="w-4 h-4" />
+                                  Previous
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setSearchPage(prev => Math.min(paginatedResults.totalPages, prev + 1))}
+                                  disabled={!paginatedResults.hasNextPage}
+                                >
+                                  Next
+                                  <ChevronRight className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )
+                    })()}
+                  </div>
+                )
+              ) : (
+                /* User email input mode */
+                <div className="space-y-4">
+                  {searchQuery.includes('@') ? (
+                    <div className={`p-4 border rounded-lg ${
+                      userAdded 
+                        ? 'bg-green-50 border-green-200' 
+                        : 'bg-blue-50 border-blue-200'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium">
+                            {isAddingUser 
+                              ? 'Searching for user...' 
+                              : userAdded 
+                                ? 'User Added Successfully!' 
+                                : `Add User: ${searchQuery}`
+                            }
                           </div>
-                        ))}
+                          <div className="text-sm text-muted-foreground">
+                            {isAddingUser 
+                              ? 'Looking up user in directory'
+                              : userAdded 
+                                ? 'The user has been added to your tenant'
+                                : 'This will add the user to your tenant'
+                            }
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            // Create a mock user from the email
+                            const mockUser: AadUser = {
+                              "@odata.type": "#microsoft.graph.user",
+                              id: `mock-user-${Date.now()}` as Guid,
+                              displayName: searchQuery.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                              mail: searchQuery,
+                              userPrincipalName: searchQuery,
+                              givenName: searchQuery.split('@')[0].split('.')[0],
+                              surname: searchQuery.split('@')[0].split('.')[1] || '',
+                              accountEnabled: true,
+                            }
+                            handleAddUser(mockUser)
+                          }}
+                          className={`flex items-center gap-1 ${
+                            userAdded 
+                              ? 'bg-green-600 hover:bg-green-700 text-white' 
+                              : ''
+                          }`}
+                          disabled={isAddingUser || userAdded}
+                        >
+                          {isAddingUser ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-900"></div>
+                              Searching...
+                            </>
+                          ) : userAdded ? (
+                            <>
+                              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              User Found & Added
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="h-3 w-3" />
+                              Add User
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </div>
-                  )}
-                  
-                  {searchResults.users.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Users</h4>
-                      <div className="space-y-2">
-                        {searchResults.users.map((user) => (
-                          <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
-                            <div>
-                              <div className="font-medium">{user.displayName}</div>
-                              <div className="text-sm text-muted-foreground">{user.mail || user.userPrincipalName}</div>
-                            </div>
-                            <Button
-                              size="sm"
-                              onClick={() => handleAddUser(user)}
-                              className="flex items-center gap-1"
-                            >
-                              <Plus className="h-3 w-3" />
-                              Add
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
+                  ) : searchQuery.length > 0 ? (
+                    <div className="text-center py-4 text-muted-foreground">
+                      <p>Please enter a valid email address</p>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Plus className="h-8 w-8 mx-auto mb-2" />
+                      <p>Enter an email address to add a user</p>
+                      <p className="text-xs mt-1">Example: john.doe@company.com</p>
                     </div>
                   )}
                 </div>
               )}
               
-              {searchQuery.length >= 2 && searchResults.groups.length === 0 && searchResults.users.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Search className="h-8 w-8 mx-auto mb-2" />
-                  <p>No users or groups found matching "{searchQuery}"</p>
-                </div>
+              {/* Empty states for groups mode */}
+              {searchMode === 'groups' && (
+                <>
+                  {searchQuery.length >= 2 && !isSearching && searchResults.groups.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Search className="h-8 w-8 mx-auto mb-2" />
+                      <p>No groups found matching "{searchQuery}"</p>
+                      <p className="text-xs mt-1">Try a different search term or check spelling</p>
+                    </div>
+                  )}
+                  
+                  {searchQuery.length < 2 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Search className="h-8 w-8 mx-auto mb-2" />
+                      <p>Type at least 2 characters to search groups</p>
+                      <p className="text-xs mt-1">Search by name or description</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -421,7 +632,7 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
           {showBulkAssign && (
             <div className="mt-4 p-4 border rounded-lg bg-muted/50">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium">Bulk Assign Permission Set</h4>
+                <h4 className="font-medium">Bulk Assign Reports</h4>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -431,31 +642,35 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                 </Button>
               </div>
               <div className="space-y-3">
-                <div>
-                  <Label>Permission Set</Label>
-                  <RadioGroup
-                    value={bulkPermissionSet}
-                    onValueChange={setBulkPermissionSet}
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="ps_viewer" id="bulk-viewer" />
-                        <Label htmlFor="bulk-viewer">Viewer</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="ps_editor" id="bulk-editor" />
-                        <Label htmlFor="bulk-editor">Editor</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="ps_admin" id="bulk-admin" />
-                        <Label htmlFor="bulk-admin">Admin</Label>
-                      </div>
+                <p className="text-sm text-muted-foreground">
+                  Select reports to assign to {selectedItems.size} selected {activeTab === 'groups' ? 'groups' : 'users'}.
+                </p>
+                
+                <div className="max-h-48 overflow-y-auto space-y-2">
+                  {reports.map((report) => (
+                    <div key={report.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={selectedReports.has(report.id)}
+                        onCheckedChange={(checked: boolean) => handleReportToggle(report.id, checked)}
+                      />
+                      <Label className="flex-1 cursor-pointer">
+                        <div className="flex flex-col">
+                          <span className="font-medium">{report.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            Path: {report.path}
+                          </span>
+                        </div>
+                      </Label>
                     </div>
-                  </RadioGroup>
+                  ))}
                 </div>
+                
                 <div className="flex gap-2">
-                  <Button onClick={handleBulkAssign} disabled={!bulkPermissionSet}>
-                    Apply to {selectedItems.size} items
+                  <Button 
+                    onClick={handleBulkReportAssign} 
+                    disabled={selectedReports.size === 0}
+                  >
+                    Assign {selectedReports.size} Report{selectedReports.size !== 1 ? 's' : ''} to {selectedItems.size} {activeTab === 'groups' ? 'Groups' : 'Users'}
                   </Button>
                   <Button variant="outline" onClick={() => setShowBulkAssign(false)}>
                     Cancel
@@ -705,9 +920,7 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                       <TableHead className="w-12"></TableHead>
                       <TableHead>User Name</TableHead>
                       <TableHead>Email</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Groups</TableHead>
-                      <TableHead>Effective Permission Set</TableHead>
+                      <TableHead>Permission Set</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -736,31 +949,6 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                             <span className="text-sm">
                               {(user as AadUser).mail || 'No email'}
                             </span>
-                          </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={(user as AadUser).accountEnabled ? "default" : "secondary"}
-                              className={(user as AadUser).accountEnabled ? "bg-green-100 text-green-800" : ""}
-                            >
-                              {(user as AadUser).accountEnabled ? 'Active' : 'Disabled'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-1">
-                              {userGroups.length > 0 ? (
-                                userGroups.map((group) => (
-                                  <Badge 
-                                    key={group.id} 
-                                    variant="outline" 
-                                    className="text-xs"
-                                  >
-                                    {group.displayName}
-                                  </Badge>
-                                ))
-                              ) : (
-                                <span className="text-muted-foreground text-sm">No groups</span>
-                              )}
-                            </div>
                           </TableCell>
                           <TableCell>
                             {effectivePs ? (
