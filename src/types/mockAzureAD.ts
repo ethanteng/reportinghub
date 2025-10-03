@@ -47,7 +47,7 @@ export type PermissionLevel = "Viewer" | "Editor" | "Admin" | "Finance Analyst" 
 
 export interface PermissionSet {
   id: string;
-  name: PermissionLevel;
+  name: string; // Changed from PermissionLevel to allow custom names like "Viewer (Copy)"
   description: string;
   // Power BI capabilities based on actual permission options
   capabilities: {

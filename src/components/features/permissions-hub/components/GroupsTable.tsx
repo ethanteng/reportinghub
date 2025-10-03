@@ -254,7 +254,7 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
             aadGroupId: itemId,
             permissionSetId: 'ps_viewer', // Default to viewer for bulk assignment
             scope: 'Report',
-            reportId: reportId,
+            targetId: reportId,
             inherited: false
           })
         })
