@@ -1,13 +1,8 @@
-import React, { useState, useMemo } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+'use client'
+
+import React, { useState, useEffect } from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
@@ -15,14 +10,24 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Input } from '@/components/ui/input'
 import { 
+  ChevronLeft, 
+  ChevronRight, 
+  UserCheck, 
+  CheckCircle2,
+  Search,
+  X,
+  Loader2,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp
+} from 'lucide-react'
+import { 
   Tenant, 
   AadGroup, 
-  AadUser,
   Guid,
-  PermissionSet
+  PermissionSet,
+  permissionSets
 } from '@/types/mockAzureAD'
-import { usePermissionsStore } from '@/store/usePermissionsStore'
-import { Search, ChevronLeft, ChevronRight, Users, UserCheck, Filter } from 'lucide-react'
 
 interface GroupRoleWizardProps {
   open: boolean
@@ -30,41 +35,44 @@ interface GroupRoleWizardProps {
   tenant: Tenant
 }
 
-interface GroupAssignment {
-  groupId: Guid
-  role: string
-  groupName: string
-}
-
 export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardProps) {
-  const { addAssignment, setSetupWizardOpen } = usePermissionsStore()
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedGroups, setSelectedGroups] = useState<Guid[]>([])
   const [groupAssignments, setGroupAssignments] = useState<Record<Guid, string>>({})
-  const [completedSteps, setCompletedSteps] = useState<number[]>([])
-  const [isSyncing, setIsSyncing] = useState(false)
-  const [lastSynced, setLastSynced] = useState<Date | null>(null)
-  const [syncSuccess, setSyncSuccess] = useState(false)
-  const [hasSynced, setHasSynced] = useState(false)
-  const [expandedGroups, setExpandedGroups] = useState<Set<Guid>>(new Set())
-  const [viewMode, setViewMode] = useState<'groups' | 'users'>('groups')
+  const [bulkPermissionSet, setBulkPermissionSet] = useState<string>('')
+  const [bulkSelectedGroups, setBulkSelectedGroups] = useState<Guid[]>([])
+  const [isQuickActionsExpanded, setIsQuickActionsExpanded] = useState(false)
   
-  // Search-first state
+  // Groups search and sync state
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<AadGroup[]>([])
-  const [searchPage, setSearchPage] = useState(1)
-  const [searchPageSize] = useState(50)
-  const [totalAvailableGroups] = useState(12500) // Mock large dataset
   const [isSearching, setIsSearching] = useState(false)
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
-  const [selectedUsers, setSelectedUsers] = useState<Guid[]>([])
-  const [userAssignments, setUserAssignments] = useState<Record<Guid, string>>({})
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(20)
-  const [bulkPermissionSet, setBulkPermissionSet] = useState<string>('')
-  const [showBulkAssign, setShowBulkAssign] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [syncProgress, setSyncProgress] = useState(0)
+  const [allGroups, setAllGroups] = useState<AadGroup[]>([])
+  const [hasSynced, setHasSynced] = useState(false)
+  
+  // Hardcoded mock timestamp for prototyping
+  const lastGroupSyncTime = new Date('2024-12-19T14:30:45')
+  const setLastGroupSyncTime = (time: Date | null) => {
+    // Mock function for prototyping
+  }
+  
+  // If there's a previous sync, populate with mock groups for search
+  useEffect(() => {
+    if (lastGroupSyncTime && allGroups.length === 0) {
+      const mockGroups = generateMockGroups(100) // Generate 100 groups for search
+      setAllGroups(mockGroups)
+    }
+  }, [lastGroupSyncTime, allGroups.length])
 
-  // Mock large dataset for search
+  const steps = [
+    { id: 1, title: 'Select Groups', description: 'Search and select groups from your directory' },
+    { id: 2, title: 'Assign Permission Sets', description: 'Set permission levels for each selection' },
+    { id: 3, title: 'Review Setup', description: 'Confirm your selections before applying' }
+  ]
+
+  // Generate mock groups for sync simulation
   const generateMockGroups = (count: number): AadGroup[] => {
     const departments = ['IT', 'Sales', 'Marketing', 'HR', 'Finance', 'Operations', 'Legal', 'Engineering', 'Support', 'Executive']
     const roles = ['Administrators', 'Managers', 'Specialists', 'Analysts', 'Coordinators', 'Directors', 'Leads', 'Associates']
@@ -81,17 +89,35 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
     }))
   }
 
-  const mockGroups: AadGroup[] = generateMockGroups(12500)
-
-  // Debounced search functionality
-  const handleSearch = (query: string) => {
-    setSearchQuery(query)
-    setSearchPage(1) // Reset to first page on new search
+  // Mock sync function to simulate fetching groups from Azure AD
+  const mockSyncGroups = async () => {
+    setIsSyncing(true)
+    setSyncProgress(0)
     
-    // Clear existing timeout
-    if (searchTimeout) {
-      clearTimeout(searchTimeout)
+    // Simulate progressive sync with 1000 groups
+    const totalGroups = 1000
+    const batchSize = 50
+    const allMockGroups: AadGroup[] = []
+    
+    for (let i = 0; i < totalGroups; i += batchSize) {
+      await new Promise(resolve => setTimeout(resolve, 30)) // Simulate network delay
+      
+      const batch = generateMockGroups(Math.min(batchSize, totalGroups - i))
+      allMockGroups.push(...batch)
+      
+      const progress = Math.round(((i + batchSize) / totalGroups) * 100)
+      setSyncProgress(Math.min(progress, 100))
     }
+    
+    setAllGroups(allMockGroups)
+    setHasSynced(true)
+    // Mock timestamp update for prototyping
+    setIsSyncing(false)
+  }
+
+  // Search groups with debouncing
+  const searchGroups = (query: string) => {
+    setSearchQuery(query)
     
     if (query.trim().length < 2) {
       setSearchResults([])
@@ -101,918 +127,530 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
 
     setIsSearching(true)
     
-    // Debounce search by 300ms
-    const timeout = setTimeout(() => {
-      const filteredGroups = mockGroups.filter(group => 
+    // Simulate search delay
+    setTimeout(() => {
+      const filtered = allGroups.filter(group => 
         group.displayName.toLowerCase().includes(query.toLowerCase()) ||
         (group.description && group.description.toLowerCase().includes(query.toLowerCase()))
       )
-
-      setSearchResults(filteredGroups)
+      setSearchResults(filtered)
       setIsSearching(false)
     }, 300)
-    
-    setSearchTimeout(timeout)
-  }
-
-  // Get paginated search results
-  const getPaginatedSearchResults = () => {
-    const startIndex = (searchPage - 1) * searchPageSize
-    const endIndex = startIndex + searchPageSize
-    return {
-      groups: searchResults.slice(startIndex, endIndex),
-      totalGroups: searchResults.length,
-      totalPages: Math.ceil(searchResults.length / searchPageSize),
-      hasNextPage: endIndex < searchResults.length,
-      hasPrevPage: searchPage > 1
-    }
-  }
-
-  const steps = [
-    { id: 1, title: 'Select Users & Groups', description: 'Choose users or groups from your directory' },
-    { id: 2, title: 'Assign Roles', description: 'Set permission levels for each selection' },
-    { id: 3, title: 'Review Setup', description: 'Confirm your tenant configuration' }
-  ]
-
-  // Filter and paginate data
-  const filteredAndPaginatedData = useMemo(() => {
-    const data = viewMode === 'users' ? tenant.users : tenant.groups
-    const filtered = data.filter(item => {
-      if (!searchQuery) return true
-      const query = searchQuery.toLowerCase()
-      if (viewMode === 'users') {
-        const user = item as AadUser
-        return user.displayName.toLowerCase().includes(query) ||
-               user.mail?.toLowerCase().includes(query) ||
-               user.userPrincipalName.toLowerCase().includes(query)
-      } else {
-        const group = item as AadGroup
-        return group.displayName.toLowerCase().includes(query) ||
-               (group.description && group.description.toLowerCase().includes(query))
-      }
-    })
-    
-    const startIndex = (currentPage - 1) * itemsPerPage
-    const endIndex = startIndex + itemsPerPage
-    const paginated = filtered.slice(startIndex, endIndex)
-    
-    return {
-      items: paginated,
-      totalItems: filtered.length,
-      totalPages: Math.ceil(filtered.length / itemsPerPage),
-      hasNextPage: endIndex < filtered.length,
-      hasPrevPage: currentPage > 1
-    }
-  }, [tenant.users, tenant.groups, viewMode, searchQuery, currentPage, itemsPerPage])
-
-  // Bulk assignment handlers
-  const handleBulkAssign = () => {
-    if (!bulkPermissionSet) return
-    
-    if (viewMode === 'users') {
-      const newAssignments = { ...userAssignments }
-      selectedUsers.forEach(userId => {
-        newAssignments[userId] = bulkPermissionSet
-      })
-      setUserAssignments(newAssignments)
-    } else {
-      const newAssignments = { ...groupAssignments }
-      selectedGroups.forEach(groupId => {
-        newAssignments[groupId] = bulkPermissionSet
-      })
-      setGroupAssignments(newAssignments)
-    }
-    
-    setShowBulkAssign(false)
-    setBulkPermissionSet('')
-  }
-
-  const handleSelectAll = (checked: boolean) => {
-    if (viewMode === 'users') {
-      if (checked) {
-        const allUserIds = filteredAndPaginatedData.items.map(item => (item as AadUser).id)
-        const combinedIds = Array.from(new Set([...selectedUsers, ...allUserIds]))
-        setSelectedUsers(combinedIds)
-      } else {
-        const currentPageIds = filteredAndPaginatedData.items.map(item => (item as AadUser).id)
-        setSelectedUsers(selectedUsers.filter(id => !currentPageIds.includes(id)))
-      }
-    } else {
-      if (checked) {
-        const allGroupIds = filteredAndPaginatedData.items.map(item => (item as AadGroup).id)
-        const combinedIds = Array.from(new Set([...selectedGroups, ...allGroupIds]))
-        setSelectedGroups(combinedIds)
-      } else {
-        const currentPageIds = filteredAndPaginatedData.items.map(item => (item as AadGroup).id)
-        setSelectedGroups(selectedGroups.filter(id => !currentPageIds.includes(id)))
-      }
-    }
-  }
-
-
-  const handleNext = () => {
-    if (currentStep < 3) {
-      setCompletedSteps(prev => [...prev, currentStep])
-      setCurrentStep(currentStep + 1)
-    } else {
-      handleComplete()
-    }
-  }
-
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
-    }
-  }
-
-  const handleComplete = () => {
-    // Apply all group assignments
-    Object.entries(groupAssignments).forEach(([groupId, permissionSetId]) => {
-      if (permissionSetId) {
-        addAssignment({
-          tenantId: tenant.tenantId,
-          aadGroupId: groupId as Guid,
-          permissionSetId,
-          scope: 'Tenant',
-          inherited: false
-        })
-      }
-    })
-
-    // Apply all user assignments (for demo purposes, we'll treat users as groups)
-    Object.entries(userAssignments).forEach(([userId, permissionSetId]) => {
-      if (permissionSetId) {
-        addAssignment({
-          tenantId: tenant.tenantId,
-          aadGroupId: userId as Guid, // Using userId as groupId for simplicity
-          permissionSetId,
-          scope: 'Tenant',
-          inherited: false
-        })
-      }
-    })
-
-    // Reset wizard state
-    setCurrentStep(1)
-    setSelectedGroups([])
-    setGroupAssignments({})
-    setSelectedUsers([])
-    setUserAssignments({})
-    setViewMode('groups')
-    setCompletedSteps([])
-    onOpenChange(false)
   }
 
   const handleGroupToggle = (groupId: Guid, checked: boolean) => {
     if (checked) {
-      setSelectedGroups([...selectedGroups, groupId])
+      setSelectedGroups(prev => [...prev, groupId])
     } else {
-      setSelectedGroups(selectedGroups.filter(id => id !== groupId))
-      // Remove assignment if group is deselected
-      const newAssignments = { ...groupAssignments }
-      delete newAssignments[groupId]
-      setGroupAssignments(newAssignments)
+      setSelectedGroups(prev => prev.filter(id => id !== groupId))
+      // Remove assignment when unselected
+      setGroupAssignments(prev => {
+        const newAssignments = { ...prev }
+        delete newAssignments[groupId]
+        return newAssignments
+      })
     }
   }
 
-  const handleUserToggle = (userId: Guid, checked: boolean) => {
+  const handleBulkGroupToggle = (groupId: Guid, checked: boolean) => {
     if (checked) {
-      setSelectedUsers([...selectedUsers, userId])
-    } else {
-      setSelectedUsers(selectedUsers.filter(id => id !== userId))
-      // Remove assignment if user is deselected
-      const newAssignments = { ...userAssignments }
-      delete newAssignments[userId]
-      setUserAssignments(newAssignments)
+      setBulkSelectedGroups(prev => [...prev, groupId])
+      } else {
+      setBulkSelectedGroups(prev => prev.filter(id => id !== groupId))
     }
   }
 
-  const toggleGroupExpansion = (groupId: Guid) => {
-    const newExpanded = new Set(expandedGroups)
-    if (newExpanded.has(groupId)) {
-      newExpanded.delete(groupId)
-    } else {
-      newExpanded.add(groupId)
-    }
-    setExpandedGroups(newExpanded)
+  const selectAllBulkGroups = () => {
+    setBulkSelectedGroups(selectedGroups)
   }
 
-  const getGroupMembers = (group: AadGroup) => {
-    // For simplicity, we'll show a few sample names based on the group
-    // In a real app, this would resolve the actual member IDs to user names
-    const sampleNames = [
-      "Alice Wong", "Ben King", "Sarah Chen", "Michael Rodriguez", 
-      "Jennifer Liu", "David Thompson", "Emily Johnson", "Robert Kim",
-      "Lisa Martinez", "James Wilson", "Amanda Davis", "Christopher Brown"
-    ]
-    
-    // Return a subset based on group size
-    const memberCount = group.members.length
-    return sampleNames.slice(0, Math.min(memberCount, 8)) // Show up to 8 names
+  const deselectAllBulkGroups = () => {
+    setBulkSelectedGroups([])
   }
 
-  const handleSync = async () => {
-    setIsSyncing(true)
-    setSyncSuccess(false)
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setLastSynced(new Date())
-    setSyncSuccess(true)
-    setHasSynced(true)
+  const handleBulkAssign = () => {
+    if (!bulkPermissionSet || bulkSelectedGroups.length === 0) return
+
+      const newAssignments = { ...groupAssignments }
+    bulkSelectedGroups.forEach(groupId => {
+        newAssignments[groupId] = bulkPermissionSet
+      })
+      setGroupAssignments(newAssignments)
+    setBulkPermissionSet('')
+  }
+
+  const resetWizard = () => {
+    setCurrentStep(1)
+    setSelectedGroups([])
+    setGroupAssignments({})
+    setBulkPermissionSet('')
+    setBulkSelectedGroups([])
+    setIsQuickActionsExpanded(false)
+    setSearchQuery('')
+    setSearchResults([])
+    setIsSearching(false)
     setIsSyncing(false)
-    // Hide success message after 3 seconds
-    setTimeout(() => setSyncSuccess(false), 3000)
+    setSyncProgress(0)
+    setAllGroups([])
+    setHasSynced(false)
+    setLastGroupSyncTime(null)
   }
 
-  const canProceed = () => {
-    switch (currentStep) {
-      case 1:
-        return selectedGroups.length > 0 || selectedUsers.length > 0
-      case 2:
-        const allGroupAssignments = selectedGroups.every(groupId => groupAssignments[groupId])
-        const allUserAssignments = selectedUsers.every(userId => userAssignments[userId])
-        return allGroupAssignments && allUserAssignments
-      case 3:
-        return true
-      default:
-        return false
-    }
+  const handleClose = () => {
+    resetWizard()
+    onOpenChange(false)
   }
 
-  const renderStep1 = () => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Select users or groups you want to set up for <strong>{tenant.displayName}</strong>. Data is imported from your Azure AD or Okta directory.
-        </p>
-        <div className="flex flex-col items-end gap-1">
+  const renderStep1 = () => {
+    const visibleGroups = searchQuery.length >= 2 ? searchResults : allGroups.slice(0, 50)
+    const allVisibleSelected = visibleGroups.every(group => selectedGroups.includes(group.id))
+    const someVisibleSelected = visibleGroups.some(group => selectedGroups.includes(group.id))
+
+    return (
+      <div className="space-y-6">
+        {/* Sync Status */}
+        {!hasSynced && !lastGroupSyncTime && (
+          <div className="p-4 border rounded-lg bg-muted/50">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <RefreshCw className="h-4 w-4" />
+                <div>
+                  <span className="font-medium">Sync Groups from Azure AD</span>
+                  {lastGroupSyncTime && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Last sync: {lastGroupSyncTime ? (lastGroupSyncTime as Date).toLocaleString() : ''}
+                    </div>
+                  )}
+                </div>
+              </div>
           <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSync}
+                onClick={mockSyncGroups} 
             disabled={isSyncing}
+                size="sm"
           >
             {isSyncing ? (
               <>
-                <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mr-2" />
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Syncing...
               </>
             ) : (
-              <>
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Sync Users & Groups
-              </>
+                  'Start Sync'
             )}
           </Button>
-          {lastSynced && (
-            <span className="text-xs text-muted-foreground">
-              Last synced: {lastSynced.toLocaleTimeString()}
-            </span>
-          )}
-        </div>
       </div>
       
-      {syncSuccess && (
-        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-          <div className="flex items-center">
-            <svg className="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            <span className="text-sm text-green-800">Data synced successfully!</span>
+            {isSyncing && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Syncing groups...</span>
+                  <span>{syncProgress}%</span>
           </div>
+                <Progress value={syncProgress} className="h-2" />
+                <p className="text-xs text-muted-foreground">
+                  This may take a few moments for large directories
+                </p>
         </div>
       )}
-
-      {hasSynced && (
-        <div className="space-y-4">
-          {/* Total count display */}
-          <div className="text-sm text-muted-foreground">
-            {totalAvailableGroups.toLocaleString()} groups available • Start typing to search
           </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex bg-muted rounded-lg p-1">
-                <button
-                  onClick={() => {
-                    setViewMode('users')
-                    setCurrentPage(1)
-                    setSearchQuery('')
-                    setSearchResults([])
-                  }}
-                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                    viewMode === 'users' 
-                      ? 'bg-background text-foreground shadow-sm' 
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <Users className="w-4 h-4 mr-1" />
-                  Users
-                </button>
-                <button
-                  onClick={() => {
-                    setViewMode('groups')
-                    setCurrentPage(1)
-                    setSearchQuery('')
-                    setSearchResults([])
-                  }}
-                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                    viewMode === 'groups' 
-                      ? 'bg-background text-foreground shadow-sm' 
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <UserCheck className="w-4 h-4 mr-1" />
-                  Groups
-                </button>
+        )}
+
+        {/* Last Sync Info - shown when there's a previous sync but no current session */}
+        {!hasSynced && lastGroupSyncTime && (
+          <div className="p-4 border rounded-lg bg-muted/50">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <RefreshCw className="h-4 w-4" />
+                <div>
+                  <span className="font-medium">Sync Groups from Azure AD</span>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Last sync: {lastGroupSyncTime ? (lastGroupSyncTime as Date).toLocaleString() : ''}
+                    {allGroups.length > 0 && (
+                      <span className="ml-2">• {allGroups.length} groups found</span>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="text-xs text-muted-foreground">
-                {viewMode === 'users' 
-                  ? `${filteredAndPaginatedData.totalItems} user${filteredAndPaginatedData.totalItems !== 1 ? 's' : ''} found`
-                  : (searchResults.length > 0 ? `${searchResults.length.toLocaleString()} found` : `${totalAvailableGroups.toLocaleString()} available`)
-                }
-              </div>
+              <Button 
+                onClick={mockSyncGroups} 
+                disabled={isSyncing}
+                size="sm"
+              >
+                {isSyncing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Syncing...
+                  </>
+                ) : (
+                  'Sync Again'
+                )}
+              </Button>
             </div>
             
-            {/* Bulk operations */}
-            {(selectedUsers.length > 0 || selectedGroups.length > 0) && (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowBulkAssign(true)}
-                >
-                  <Filter className="w-4 h-4 mr-1" />
-                  Bulk Assign ({viewMode === 'users' ? selectedUsers.length : selectedGroups.length})
-                </Button>
+            {isSyncing && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Syncing groups...</span>
+                  <span>{syncProgress}%</span>
+                </div>
+                <Progress value={syncProgress} className="h-2" />
+                <p className="text-xs text-muted-foreground">
+                  This may take a few moments for large directories
+                </p>
               </div>
             )}
           </div>
+        )}
 
-          {/* Search */}
+        {/* Last Sync Info - shown after current sync */}
+        {hasSynced && lastGroupSyncTime && (
+          <div className="p-3 border rounded-lg bg-green-50 border-green-200">
+            <div className="flex items-center gap-2 text-sm">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-green-700 font-medium">Groups synced successfully</span>
+              <span className="text-green-600">
+                Last sync: {lastGroupSyncTime.toLocaleString()}
+                {allGroups.length > 0 && (
+                  <span className="ml-2">• {allGroups.length} groups found</span>
+                )}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Search and Selection */}
+        {lastGroupSyncTime && (
+          <div className="space-y-4">
+            {/* Search Bar */}
+            <div className="space-y-2">
+              <Label htmlFor="group-search">Search Groups</Label>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={`Search ${viewMode}...`}
+                  id="group-search"
+                  placeholder="Type at least 2 characters to search groups..."
               value={searchQuery}
-              onChange={(e) => {
-                if (viewMode === 'groups') {
-                  handleSearch(e.target.value)
-                } else {
-                  setSearchQuery(e.target.value)
-                  setCurrentPage(1)
-                }
-              }}
+                  onChange={(e) => searchGroups(e.target.value)}
               className="pl-10"
             />
             {isSearching && (
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-              </div>
+                  <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
             )}
           </div>
+              </div>
 
-          {/* Bulk assignment modal */}
-          {showBulkAssign && (
-            <div className="p-4 border rounded-lg bg-muted/50">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium">Bulk Assign Permission Set</h4>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowBulkAssign(false)}
-                >
-                  ×
-                </Button>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <Label>Permission Set</Label>
-                  <RadioGroup
-                    value={bulkPermissionSet}
-                    onValueChange={setBulkPermissionSet}
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="ps_viewer" id="bulk-viewer" />
-                        <Label htmlFor="bulk-viewer">Viewer</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="ps_editor" id="bulk-editor" />
-                        <Label htmlFor="bulk-editor">Editor</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="ps_admin" id="bulk-admin" />
-                        <Label htmlFor="bulk-admin">Admin</Label>
-                      </div>
-                    </div>
-                  </RadioGroup>
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={handleBulkAssign} disabled={!bulkPermissionSet}>
-                    Apply to {viewMode === 'users' ? selectedUsers.length : selectedGroups.length} {viewMode}
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowBulkAssign(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-      
-      {!hasSynced ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-            <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-medium mb-2">No data loaded</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Click "Sync Groups" to load users and groups from your directory
-          </p>
-        </div>
-      ) : viewMode === 'users' ? (
-        <div className="space-y-2">
           {/* Select All Header */}
-          {filteredAndPaginatedData.items.length > 0 && (
+            {visibleGroups.length > 0 && (
             <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
               <div className="flex items-center space-x-2">
                 <Checkbox
-                  checked={filteredAndPaginatedData.items.every(item => 
-                    selectedUsers.includes((item as AadUser).id)
-                  )}
-                  onCheckedChange={handleSelectAll}
+                    checked={allVisibleSelected}
+                    ref={(el) => {
+                      if (el && el instanceof HTMLInputElement) {
+                        el.indeterminate = someVisibleSelected && !allVisibleSelected
+                      }
+                    }}
+                    onCheckedChange={(checked: boolean) => {
+                      if (checked) {
+                        const newSelections = Array.from(new Set([...selectedGroups, ...visibleGroups.map(g => g.id)]))
+                        setSelectedGroups(newSelections)
+                      } else {
+                        const visibleIds = visibleGroups.map(g => g.id)
+                        setSelectedGroups(selectedGroups.filter(id => !visibleIds.includes(id)))
+                      }
+                    }}
                 />
                 <span className="text-sm font-medium">
-                  Select all on this page ({filteredAndPaginatedData.items.length})
+                    Select all visible ({visibleGroups.length})
                 </span>
               </div>
               <div className="text-xs text-muted-foreground">
-                {selectedUsers.length} total selected
+                  {selectedGroups.length} total selected
               </div>
             </div>
           )}
           
-          <div className="max-h-96 overflow-y-auto space-y-2">
-            {filteredAndPaginatedData.items.map((user) => (
-              <Card key={user.id} className="hover:bg-muted/50 transition-colors">
-                <CardContent className="p-4">
-                  <div className="flex items-start space-x-3">
+            {/* Groups List */}
+            <div className="max-h-96 overflow-y-auto border rounded-lg">
+              {visibleGroups.length > 0 ? (
+                <div className="space-y-1">
+                  {visibleGroups.map((group) => (
+                    <div key={group.id} className="flex items-center space-x-3 p-3 hover:bg-muted/50 transition-colors">
                     <Checkbox
-                      checked={selectedUsers.includes((user as AadUser).id)}
-                      onCheckedChange={(checked: boolean) => 
-                        handleUserToggle((user as AadUser).id, checked)
-                      }
+                        checked={selectedGroups.includes(group.id)}
+                        onCheckedChange={(checked: boolean) => handleGroupToggle(group.id, checked)}
                     />
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium">{(user as AadUser).displayName}</span>
-                        {(user as AadUser).userPrincipalName.includes('#EXT#') && (
-                          <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">
-                            Guest
-                          </span>
+                        <div className="font-medium">{group.displayName}</div>
+                        {group.description && (
+                      <div className="text-sm text-muted-foreground">
+                            {group.description}
+                      </div>
                         )}
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {(user as AadUser).mail || (user as AadUser).userPrincipalName}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {(user as AadUser).accountEnabled ? 'Active' : 'Inactive'}
-                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
             ))}
           </div>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {/* Search results or empty state */}
-          {searchQuery.length >= 2 ? (
-            <>
-              {/* Search results with pagination */}
-              {searchResults.length > 0 ? (
-                <>
-                  {/* Select All Header for search results */}
-                  {(() => {
-                    const paginatedResults = getPaginatedSearchResults()
-                    return (
-                      <>
-                        {paginatedResults.groups.length > 0 && (
-                          <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
-                            <div className="flex items-center space-x-2">
-                              <Checkbox
-                                checked={paginatedResults.groups.every(group => 
-                                  selectedGroups.includes(group.id)
-                                )}
-                                onCheckedChange={(checked: boolean) => {
-                                  if (checked) {
-                                    const allGroupIds = paginatedResults.groups.map(group => group.id)
-                                    const combinedIds = Array.from(new Set([...selectedGroups, ...allGroupIds]))
-                                    setSelectedGroups(combinedIds)
-                                  } else {
-                                    const currentPageIds = paginatedResults.groups.map(group => group.id)
-                                    setSelectedGroups(selectedGroups.filter(id => !currentPageIds.includes(id)))
-                                  }
-                                }}
-                              />
-                              <span className="text-sm font-medium">
-                                Select all on this page ({paginatedResults.groups.length})
-                              </span>
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {selectedGroups.length} total selected • {paginatedResults.totalGroups.toLocaleString()} found
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="max-h-96 overflow-y-auto space-y-2">
-                          {paginatedResults.groups.map((group) => {
-              const isExpanded = expandedGroups.has((group as AadGroup).id)
-              const members = getGroupMembers(group as AadGroup)
-              const hasMoreMembers = (group as AadGroup).members.length > members.length
-              
-              return (
-                <Card key={group.id} className="hover:bg-muted/50 transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex items-start space-x-3">
-                      <Checkbox
-                        checked={selectedGroups.includes((group as AadGroup).id)}
-                        onCheckedChange={(checked: boolean) => 
-                          handleGroupToggle((group as AadGroup).id, checked)
-                        }
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium">{(group as AadGroup).displayName}</span>
-                        </div>
-                        {(group as AadGroup).description && (
-                          <p className="text-sm text-muted-foreground">
-                            {(group as AadGroup).description}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between mt-2">
-                          <div className="text-xs text-muted-foreground">
-                            {(group as AadGroup).members.length} member{(group as AadGroup).members.length !== 1 ? 's' : ''}
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              toggleGroupExpansion((group as AadGroup).id)
-                            }}
-                            className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                          >
-                            {isExpanded ? 'Hide members' : 'Show members'}
-                            <svg 
-                              className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
-                              fill="none" 
-                              stroke="currentColor" 
-                              viewBox="0 0 24 24"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </button>
-                        </div>
-                        
-                        {isExpanded && (
-                          <div className="mt-3 pt-3 border-t border-muted">
-                            <div className="text-xs text-muted-foreground mb-2">Members:</div>
-                            <div className="space-y-1">
-                              {members.map((member, index) => (
-                                <div key={index} className="text-xs text-foreground">
-                                  {member}
-                                </div>
-                              ))}
-                              {hasMoreMembers && (
-                                <div className="text-xs text-muted-foreground italic">
-                                  ... and {(group as AadGroup).members.length - members.length} more
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-                          })}
-                        </div>
-                        
-                        {/* Pagination controls for search results */}
-                        {paginatedResults.totalPages > 1 && (
-                          <div className="flex items-center justify-between pt-4 border-t">
-                            <div className="text-sm text-muted-foreground">
-                              Showing {((searchPage - 1) * searchPageSize) + 1} to {Math.min(searchPage * searchPageSize, paginatedResults.totalGroups)} of {paginatedResults.totalGroups.toLocaleString()} results
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setSearchPage(prev => Math.max(1, prev - 1))}
-                                disabled={!paginatedResults.hasPrevPage}
-                              >
-                                <ChevronLeft className="w-4 h-4" />
-                                Previous
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setSearchPage(prev => Math.min(paginatedResults.totalPages, prev + 1))}
-                                disabled={!paginatedResults.hasNextPage}
-                              >
-                                Next
-                                <ChevronRight className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    )
-                  })()}
-                </>
-              ) : (
+              ) : searchQuery.length >= 2 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Search className="h-8 w-8 mx-auto mb-2" />
                   <p>No groups found matching "{searchQuery}"</p>
-                  <p className="text-xs mt-1">Try a different search term or check spelling</p>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <Search className="h-8 w-8 mx-auto mb-2" />
-              <p>Type at least 2 characters to search groups</p>
-              <p className="text-xs mt-1">Search by name or description</p>
-            </div>
-          )}
+                  <p className="text-xs mt-1">Try a different search term</p>
         </div>
-      )}
+      ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <UserCheck className="h-8 w-8 mx-auto mb-2" />
+                  <p>Search for groups to get started</p>
+                  <p className="text-xs mt-1">Type at least 2 characters to search</p>
+                          </div>
+                        )}
+                        </div>
 
-      {/* Pagination */}
-      {hasSynced && filteredAndPaginatedData.totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4 border-t">
-          <div className="text-sm text-muted-foreground">
-            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredAndPaginatedData.totalItems)} of {filteredAndPaginatedData.totalItems} {viewMode}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={!filteredAndPaginatedData.hasPrevPage}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
-            </Button>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(5, filteredAndPaginatedData.totalPages) }, (_, i) => {
-                const pageNum = i + 1
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={currentPage === pageNum ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setCurrentPage(pageNum)}
-                    className="w-8 h-8 p-0"
-                  >
-                    {pageNum}
-                  </Button>
-                )
-              })}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.min(filteredAndPaginatedData.totalPages, prev + 1))}
-              disabled={!filteredAndPaginatedData.hasNextPage}
-            >
-              Next
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
+            {/* Selection Summary */}
+            {selectedGroups.length > 0 && (
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Selected Groups</span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{selectedGroups.length} groups</Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedGroups([])}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Clear All
+                    </Button>
+                        </div>
+                                </div>
+                                </div>
+                              )}
+                          </div>
+                        )}
+                      </div>
+    )
+  }
 
   const renderStep2 = () => (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Assign default roles for <strong>{tenant.displayName}</strong>. These will be applied at the tenant level. <span className="text-green-600 font-medium">Safe to assign — you can change this anytime.</span>
+        Assign default permission sets for <strong>{tenant.displayName}</strong>. These will be applied at the tenant level. <span className="text-green-600 font-medium">Safe to assign — you can change this anytime.</span>
       </p>
       
-      <div className="space-y-4">
-        {/* Selected Users */}
-        {selectedUsers.map((userId) => {
-          const user = tenant.users.find(u => u.id === userId)!
-          return (
-            <Card key={userId}>
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{user.displayName}</span>
-                  {user.userPrincipalName.includes('#EXT#') && (
-                    <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">
-                      Guest
-                    </span>
-                  )}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {user.mail || user.userPrincipalName}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <Label>Select Role</Label>
-                  <RadioGroup
-                    value={userAssignments[userId] || ''}
-                    onValueChange={(value) => setUserAssignments(prev => ({ ...prev, [userId]: value }))}
+      {selectedGroups.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <UserCheck className="h-8 w-8 mx-auto mb-2" />
+          <p>No groups selected</p>
+          <p className="text-xs mt-1">Go back to step 1 to select groups</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Quick Actions */}
+            <div className={`border rounded-lg transition-all duration-200 ${
+              bulkSelectedGroups.length > 0 
+                ? 'bg-blue-50 border-blue-200 shadow-sm' 
+                : 'bg-muted/50'
+            }`}>
+              <div 
+                className={`flex items-center justify-between p-4 cursor-pointer transition-colors ${
+                  bulkSelectedGroups.length > 0
+                    ? 'hover:bg-blue-100'
+                    : 'hover:bg-muted/70'
+                }`}
+                onClick={() => setIsQuickActionsExpanded(!isQuickActionsExpanded)}
+              >
+              <div className="flex items-center gap-4">
+                <h4 className={`font-medium ${
+                  bulkSelectedGroups.length > 0 
+                    ? 'text-blue-700' 
+                    : ''
+                }`}>Quick Actions</h4>
+                <span className={`text-sm ${
+                  bulkSelectedGroups.length > 0 
+                    ? 'text-blue-600' 
+                    : 'text-muted-foreground'
+                }`}>
+                  {bulkSelectedGroups.length} of {selectedGroups.length} selected
+                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      selectAllBulkGroups()
+                    }}
+                    disabled={bulkSelectedGroups.length === selectedGroups.length}
                   >
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
-                        <RadioGroupItem value="ps_viewer" id={`${userId}-viewer`} />
-                        <Label htmlFor={`${userId}-viewer`} className="flex-1 cursor-pointer">
-                          <div className="flex flex-col">
-                            <span className="font-medium">Viewer</span>
-                            <span className="text-sm text-muted-foreground">
-                              Read-only access to reports and dashboards
-                            </span>
-                          </div>
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
-                        <RadioGroupItem value="ps_editor" id={`${userId}-editor`} />
-                        <Label htmlFor={`${userId}-editor`} className="flex-1 cursor-pointer">
-                          <div className="flex flex-col">
-                            <span className="font-medium">Editor</span>
-                            <span className="text-sm text-muted-foreground">
-                              View and customize reports (no admin access)
-                            </span>
-                          </div>
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
-                        <RadioGroupItem value="ps_admin" id={`${userId}-admin`} />
-                        <Label htmlFor={`${userId}-admin`} className="flex-1 cursor-pointer">
-                          <div className="flex flex-col">
-                            <span className="font-medium">Admin</span>
-                            <span className="text-sm text-muted-foreground">
-                              Full access including permissions management
-                            </span>
-                          </div>
-                        </Label>
-                      </div>
+                    Select All
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      deselectAllBulkGroups()
+                    }}
+                    disabled={bulkSelectedGroups.length === 0}
+                  >
+                    Deselect All
+                              </Button>
+                            </div>
+                  {isQuickActionsExpanded ? (
+                    <ChevronUp className={`h-4 w-4 ${
+                      bulkSelectedGroups.length > 0 
+                        ? 'text-blue-600' 
+                        : 'text-muted-foreground'
+                    }`} />
+                  ) : (
+                    <ChevronDown className={`h-4 w-4 ${
+                      bulkSelectedGroups.length > 0 
+                        ? 'text-blue-600' 
+                        : 'text-muted-foreground'
+                    }`} />
+                  )}
+            </div>
+        </div>
+
+            {isQuickActionsExpanded && (
+              <div className="px-4 pb-4 space-y-3">
+                <div>
+                  <Label>Apply Same Permission Set to Bulk Selected Groups</Label>
+                  <RadioGroup
+                    value={bulkPermissionSet}
+                    onValueChange={setBulkPermissionSet}
+                  >
+                    <div className="grid grid-cols-3 gap-2 mt-2">
+                      {permissionSets.map((permissionSet) => (
+                        <div key={permissionSet.id} className="flex items-center space-x-2 p-2 border rounded hover:bg-muted/50">
+                          <RadioGroupItem value={permissionSet.id} id={`bulk-${permissionSet.id}`} />
+                          <Label htmlFor={`bulk-${permissionSet.id}`} className="flex-1 cursor-pointer text-sm">
+                            {permissionSet.name}
+                          </Label>
+          </div>
+                      ))}
                     </div>
                   </RadioGroup>
                 </div>
-              </CardContent>
-            </Card>
-          )
-        })}
+                <div className="flex gap-2">
+            <Button
+                    onClick={handleBulkAssign}
+                    disabled={!bulkPermissionSet || bulkSelectedGroups.length === 0}
+              size="sm"
+            >
+                    Apply to Bulk Selected ({bulkSelectedGroups.length})
+            </Button>
+            <Button
+              variant="outline"
+                    onClick={() => setBulkPermissionSet('')}
+              size="sm"
+            >
+                    Clear
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
 
-        {/* Selected Groups */}
+          {/* Individual Assignments */}
+    <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-lg">Group Assignments</h4>
+                            <span className="text-sm text-muted-foreground">
+                Assign permission sets to each group individually
+                            </span>
+                          </div>
+            
+            <div className="max-h-96 overflow-y-auto border rounded-lg p-4 bg-gray-50">
+              <div className="space-y-3">
         {selectedGroups.map((groupId) => {
-          const group = tenant.groups.find(g => g.id === groupId)!
+                  const group = allGroups.find(g => g.id === groupId)
+                  if (!group) return null
+
           return (
-            <Card key={groupId}>
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{group.displayName}</span>
+                    <div key={groupId} className="p-4 border rounded bg-white">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <div className="font-medium">{group.displayName}</div>
+                          {group.description && (
+                            <div className="text-sm text-muted-foreground">
+                              {group.description}
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <Label>Select Role</Label>
+                          )}
+                        </div>
+                        <Button
+                          variant={bulkSelectedGroups.includes(groupId) ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleBulkGroupToggle(groupId, !bulkSelectedGroups.includes(groupId))}
+                        >
+                          {bulkSelectedGroups.includes(groupId) ? "Selected" : "Select"}
+                        </Button>
+                      </div>
+                      
                   <RadioGroup
                     value={groupAssignments[groupId] || ''}
                     onValueChange={(value) => setGroupAssignments(prev => ({ ...prev, [groupId]: value }))}
                   >
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
-                        <RadioGroupItem value="ps_viewer" id={`${groupId}-viewer`} />
-                        <Label htmlFor={`${groupId}-viewer`} className="flex-1 cursor-pointer">
-                          <div className="flex flex-col">
-                            <span className="font-medium">Viewer</span>
-                            <span className="text-sm text-muted-foreground">
-                              Read-only access to reports and dashboards
-                            </span>
-                          </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {permissionSets.map((permissionSet) => (
+                            <div key={permissionSet.id} className="flex items-center space-x-2 p-2 border rounded hover:bg-muted/50">
+                              <RadioGroupItem value={permissionSet.id} id={`${groupId}-${permissionSet.id}`} />
+                              <Label htmlFor={`${groupId}-${permissionSet.id}`} className="flex-1 cursor-pointer text-sm">
+                                {permissionSet.name}
                         </Label>
                       </div>
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
-                        <RadioGroupItem value="ps_editor" id={`${groupId}-editor`} />
-                        <Label htmlFor={`${groupId}-editor`} className="flex-1 cursor-pointer">
-                          <div className="flex flex-col">
-                            <span className="font-medium">Editor</span>
-                            <span className="text-sm text-muted-foreground">
-                              View and customize reports (no admin access)
-                            </span>
-                          </div>
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
-                        <RadioGroupItem value="ps_admin" id={`${groupId}-admin`} />
-                        <Label htmlFor={`${groupId}-admin`} className="flex-1 cursor-pointer">
-                          <div className="flex flex-col">
-                            <span className="font-medium">Admin</span>
-                            <span className="text-sm text-muted-foreground">
-                              Full access including permissions management
-                            </span>
-                          </div>
-                        </Label>
-                      </div>
+                          ))}
                     </div>
                   </RadioGroup>
                 </div>
-              </CardContent>
-            </Card>
           )
         })}
       </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 
   const renderStep3 = () => {
-    const groupAssignmentList: GroupAssignment[] = selectedGroups.map(groupId => {
-      const group = tenant.groups.find(g => g.id === groupId)!
-      const role = groupAssignments[groupId]
-      const roleName = role?.replace('ps_', '').replace('_', ' ') || 'Not assigned'
-      
-      return {
-        groupId,
-        role: roleName,
-        groupName: group.displayName
-      }
-    })
-
-    const userAssignmentList: GroupAssignment[] = selectedUsers.map(userId => {
-      const user = tenant.users.find(u => u.id === userId)!
-      const role = userAssignments[userId]
-      const roleName = role?.replace('ps_', '').replace('_', ' ') || 'Not assigned'
-      
-      return {
-        groupId: userId,
-        role: roleName,
-        groupName: user.displayName
-      }
-    })
-
-    const allAssignments = [...groupAssignmentList, ...userAssignmentList]
+    const getPermissionSetName = (permissionSetId: string) => {
+      const permissionSet = permissionSets.find(ps => ps.id === permissionSetId)
+      return permissionSet?.name || 'Not assigned'
+    }
 
     return (
       <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          Review your tenant setup for <strong>{tenant.displayName}</strong> before applying these assignments and roles.
-        </p>
-        
         <div className="space-y-4">
-          <div className="p-4 bg-muted rounded-lg">
-            <h4 className="font-medium mb-2">Summary</h4>
-            <div className="space-y-1 text-sm">
-              <div><strong>Users selected:</strong> {selectedUsers.length}</div>
-              <div><strong>Groups selected:</strong> {selectedGroups.length}</div>
-              <div><strong>Total assignments:</strong> {allAssignments.length}</div>
-              <div><strong>Tenant:</strong> {tenant.displayName}</div>
-            </div>
-          </div>
-          
-          <div className="space-y-3">
-            <h4 className="font-medium">Assignments</h4>
-            {allAssignments.map((assignment) => (
-              <div key={assignment.groupId} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{assignment.groupName}</span>
+          {/* Groups Summary */}
+          {selectedGroups.length > 0 && (
+            <div>
+              <h4 className="font-medium mb-3">Groups ({selectedGroups.length})</h4>
+              <div className="space-y-2">
+                {selectedGroups.map((groupId) => {
+                  const group = allGroups.find(g => g.id === groupId)
+                  if (!group) return null
+                  
+                  return (
+                    <div key={groupId} className="flex items-center justify-between p-3 border rounded">
+                      <div>
+                        <div className="font-medium">{group.displayName}</div>
+                        {group.description && (
+                          <div className="text-sm text-muted-foreground">
+                            {group.description}
                 </div>
-                <Badge variant="secondary" className="capitalize">
-                  {assignment.role}
+                        )}
+                      </div>
+                      <Badge variant="outline">
+                        {getPermissionSetName(groupAssignments[groupId])}
                 </Badge>
               </div>
-            ))}
+                  )
+                })}
           </div>
-
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>Next steps:</strong> After completing this wizard, you can fine-tune access to specific reports in the{' '}
-              <Button 
-                variant="link" 
-                className="p-0 h-auto text-blue-800 underline"
-                onClick={() => {
-                  onOpenChange(false)
-                  // This would ideally switch to the Report Access tab
-                  // For now, we'll just close the wizard
-                }}
-              >
-                Report Access tab
-              </Button>
-              .
-            </p>
           </div>
+          )}
         </div>
       </div>
     )
@@ -1027,64 +665,107 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
       case 3:
         return renderStep3()
       default:
-        return null
+        return renderStep1()
+    }
+  }
+
+  const canProceed = () => {
+    switch (currentStep) {
+      case 1:
+        return selectedGroups.length > 0
+      case 2:
+        return true
+      case 3:
+        return true
+      default:
+        return false
+    }
+  }
+
+  const handleNext = () => {
+    if (currentStep < 3 && canProceed()) {
+      setCurrentStep(prev => prev + 1)
+    }
+  }
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(prev => prev - 1)
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-hidden flex flex-col">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Report Permissions Setup Wizard</DialogTitle>
-          <DialogDescription>
-            Set up permissions for {tenant.displayName} by assigning roles to groups from your directory. Simple, safe, and reversible.
-          </DialogDescription>
         </DialogHeader>
 
-        {/* Progress */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            {steps.map((step) => (
-              <div key={step.id} className="flex items-center gap-2">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                  completedSteps.includes(step.id) 
-                    ? 'bg-green-500 text-white' 
-                    : currentStep === step.id 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-muted text-muted-foreground'
+        {/* Progress Indicator */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            {steps.map((step, index) => (
+              <div key={step.id} className="flex items-center">
+                <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
+                  currentStep >= step.id 
+                    ? 'bg-primary border-primary text-primary-foreground' 
+                    : 'border-muted-foreground text-muted-foreground'
                 }`}>
-                  {completedSteps.includes(step.id) ? '✓' : step.id}
+                  {currentStep > step.id ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : (
+                    <span className="text-sm font-medium">{step.id}</span>
+                  )}
                 </div>
-                <span className={currentStep === step.id ? 'font-medium' : ''}>
+                <div className="ml-2">
+                  <div className={`text-sm font-medium ${
+                    currentStep >= step.id ? 'text-foreground' : 'text-muted-foreground'
+                  }`}>
                   {step.title}
-                </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {step.description}
+                  </div>
+                </div>
+                {index < steps.length - 1 && (
+                  <div className="w-8 h-0.5 bg-muted-foreground/20 mx-4" />
+                )}
               </div>
             ))}
           </div>
-          <Progress value={(currentStep / 3) * 100} className="h-2" />
+          <Progress value={(currentStep / steps.length) * 100} className="h-2" />
         </div>
 
         {/* Step Content */}
-        <div className="flex-1 overflow-auto py-4">
+        <div className="py-6">
           {renderCurrentStep()}
         </div>
 
         {/* Navigation */}
-        <div className="flex justify-between pt-4 border-t">
+        <div className="flex items-center justify-between pt-4 border-t">
           <Button 
             variant="outline" 
             onClick={handleBack}
             disabled={currentStep === 1}
           >
+            <ChevronLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+          
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleClose}>
               Cancel
             </Button>
+            {currentStep < 3 ? (
             <Button onClick={handleNext} disabled={!canProceed()}>
-              {currentStep === 3 ? 'Complete Setup' : 'Next'}
+                Next
+                <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
+            ) : (
+              <Button onClick={handleClose}>
+                Complete Setup
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>

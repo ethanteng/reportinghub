@@ -319,7 +319,7 @@ export function ReportAccessMatrixSidebar({ tenant, reports }: ReportAccessMatri
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">{summary.report.path}</p>
+                        <p className="text-sm font-medium text-foreground bg-muted px-2 py-1 rounded inline-block">{summary.report.path}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -339,13 +339,13 @@ export function ReportAccessMatrixSidebar({ tenant, reports }: ReportAccessMatri
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </Button>
-                      <Button
+                      {/* <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setAuditReportId(summary.report.id)}
                       >
                         Audit
-                      </Button>
+                      </Button> */}
                     </div>
                   </div>
 
@@ -411,13 +411,19 @@ export function ReportAccessMatrixSidebar({ tenant, reports }: ReportAccessMatri
                   {!isExpanded && totalAssignments > 0 && (
                     <div className="text-sm text-muted-foreground">
                       {summary.assignments.length > 0 && (
-                        <span className="inline-flex items-center gap-1 mr-4">
+                        <span 
+                          className="inline-flex items-center gap-1 mr-4 cursor-pointer hover:text-foreground transition-colors"
+                          onClick={() => toggleReportExpansion(summary.report.id)}
+                        >
                           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                           {summary.assignments.length} user{summary.assignments.length !== 1 ? 's' : ''}
                         </span>
                       )}
                       {summary.groupAssignments.length > 0 && (
-                        <span className="inline-flex items-center gap-1">
+                        <span 
+                          className="inline-flex items-center gap-1 cursor-pointer hover:text-foreground transition-colors"
+                          onClick={() => toggleReportExpansion(summary.report.id)}
+                        >
                           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                           {summary.groupAssignments.length} group{summary.groupAssignments.length !== 1 ? 's' : ''}
                         </span>

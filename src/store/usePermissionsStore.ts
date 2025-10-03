@@ -48,11 +48,15 @@ interface PermissionsState {
   // Group role wizard state
   groupRoleWizardOpen: boolean
   setGroupRoleWizardOpen: (open: boolean) => void
+  
+  // Last sync time for groups
+  lastGroupSyncTime: Date | null
+  setLastGroupSyncTime: (time: Date | null) => void
 }
 
 export const usePermissionsStore = create<PermissionsState>((set, get) => ({
   // Current tenant
-  currentTenantId: null,
+  currentTenantId: "11111111-aaaa-4444-bbbb-222222222222", // Default to tenantContoso
   setCurrentTenantId: (tenantId) => set({ currentTenantId: tenantId }),
   
   // Permission sets (initialized with mock data)
@@ -132,8 +136,12 @@ export const usePermissionsStore = create<PermissionsState>((set, get) => ({
     set({ setupGroupAssignments: assignments }),
   
   // Group role wizard
-  groupRoleWizardOpen: true,
+  groupRoleWizardOpen: false,
   setGroupRoleWizardOpen: (open) => set({ groupRoleWizardOpen: open }),
+  
+  // Last sync time
+  lastGroupSyncTime: null,
+  setLastGroupSyncTime: (time) => set({ lastGroupSyncTime: time }),
 }))
 
 // Helper functions

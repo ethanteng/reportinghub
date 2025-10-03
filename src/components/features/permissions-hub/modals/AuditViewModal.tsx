@@ -147,9 +147,8 @@ export function AuditViewModal({
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="w-[200px]">User</TableHead>
-                          <TableHead className="w-[250px]">Email</TableHead>
-                          <TableHead>Effective Permission</TableHead>
+                          <TableHead className="w-[400px]">User</TableHead>
+                          <TableHead className="w-[200px]">Permission Set</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -159,28 +158,25 @@ export function AuditViewModal({
                           return (
                             <TableRow key={user.id}>
                               <TableCell className="font-medium">
-                                <div className="flex items-center gap-2">
-                                  <span>{user.displayName}</span>
-                                  {user.userPrincipalName.includes('#EXT#') && (
-                                    <Badge variant="outline" className="text-xs">
-                                      Guest
-                                    </Badge>
-                                  )}
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-2">
+                                    <span>{user.displayName}</span>
+                                    {user.userPrincipalName.includes('#EXT#') && (
+                                      <Badge variant="outline" className="text-xs">
+                                        Guest
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <span className="text-sm text-muted-foreground">
+                                    {user.mail || user.userPrincipalName}
+                                  </span>
                                 </div>
-                              </TableCell>
-                              <TableCell>
-                                <span className="text-sm text-muted-foreground">
-                                  {user.mail || user.userPrincipalName}
-                                </span>
                               </TableCell>
                               <TableCell>
                                 <div className="flex flex-col gap-1">
                                   <Badge variant="secondary" className="w-fit">
                                     {ps?.name || 'Unknown'}
                                   </Badge>
-                                  <span className="text-xs text-muted-foreground">
-                                    Direct assignment
-                                  </span>
                                   {effectivePermission.rlsRole && (
                                     <span className="text-xs text-muted-foreground">
                                       RLS: {effectivePermission.rlsRole}
@@ -206,9 +202,8 @@ export function AuditViewModal({
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="w-[200px]">Group</TableHead>
-                          <TableHead className="w-[250px]">Members</TableHead>
-                          <TableHead>Effective Permission</TableHead>
+                          <TableHead className="w-[400px]">Group</TableHead>
+                          <TableHead className="w-[200px]">Permission Set</TableHead>
                         </TableRow>
                       </TableHeader>
                     <TableBody>
@@ -220,8 +215,24 @@ export function AuditViewModal({
                           <React.Fragment key={group.id}>
                             <TableRow>
                               <TableCell className="font-medium">
-                                <div className="flex flex-col">
-                                  <span>{group.displayName}</span>
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-2">
+                                    <span>{group.displayName}</span>
+                                    <button
+                                      onClick={() => toggleGroupExpansion(group.id)}
+                                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-blue-600 transition-colors"
+                                    >
+                                      <span>({memberCount} total)</span>
+                                      <svg
+                                        className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                      </svg>
+                                    </button>
+                                  </div>
                                   {group.description && (
                                     <span className="text-xs text-muted-foreground">
                                       {group.description}
@@ -230,29 +241,10 @@ export function AuditViewModal({
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <button
-                                  onClick={() => toggleGroupExpansion(group.id)}
-                                  className="flex items-center gap-2 text-left hover:text-blue-600 transition-colors"
-                                >
-                                  <span>{memberCount} total</span>
-                                  <svg
-                                    className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                  </svg>
-                                </button>
-                              </TableCell>
-                              <TableCell>
                                 <div className="flex flex-col gap-1">
                                   <Badge variant="secondary" className="w-fit">
                                     {ps?.name || 'Unknown'}
                                   </Badge>
-                                  <span className="text-xs text-muted-foreground">
-                                    {effectivePermission.inheritedFrom === 'Tenant' ? 'Tenant default' : 'Report override'}
-                                  </span>
                                   {effectivePermission.rlsRole && (
                                     <span className="text-xs text-muted-foreground">
                                       RLS: {effectivePermission.rlsRole}
@@ -265,7 +257,7 @@ export function AuditViewModal({
                             {/* Expanded Group Members */}
                             {isExpanded && (
                               <TableRow>
-                                <TableCell colSpan={3} className="p-0">
+                                <TableCell colSpan={2} className="p-0">
                                   <div className="bg-muted/30 p-3">
                                     <div className="text-xs text-muted-foreground mb-2">Members:</div>
                                     <div className="space-y-1">

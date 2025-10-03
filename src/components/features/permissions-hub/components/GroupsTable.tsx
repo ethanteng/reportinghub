@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Table, TableHeader, TableRow, TableHead, TableCell, TableBody } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
+import { Progress } from '@/components/ui/progress'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { 
   resolveTransitiveMembers, 
   getEffectivePermissionSetId, 
@@ -19,7 +21,7 @@ import {
 } from '@/types/mockAzureAD'
 import { usePermissionsStore } from '@/store/usePermissionsStore'
 import { AssignTenantSetModal } from '../modals/AssignTenantSetModal'
-import { Search, Plus, X, Settings, Users, UserCheck, Filter, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Plus, X, Settings, Users, UserCheck, Filter, ChevronLeft, ChevronRight, RefreshCw, Loader2 } from 'lucide-react'
 
 interface GroupsTableProps {
   tenant: Tenant
@@ -94,7 +96,7 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
   const [selectedGroup, setSelectedGroup] = useState<AadGroup | null>(null)
   const [selectedUser, setSelectedUser] = useState<AadUser | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [showSearch, setShowSearch] = useState(false)
+  const [showSearch, setShowSearch] = useState(true) // Always show search by default
   const [searchResults, setSearchResults] = useState<{groups: AadGroup[], users: AadUser[]}>({groups: [], users: []})
   const [searchPage, setSearchPage] = useState(1)
   const [searchPageSize] = useState(50)
@@ -115,8 +117,40 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(10)
   const [activeTab, setActiveTab] = useState<'groups' | 'users'>('groups')
+  
+  // Update search mode when active tab changes
+  useEffect(() => {
+    setSearchMode(activeTab)
+    setSearchQuery('')
+    setSearchResults({groups: [], users: []})
+  }, [activeTab])
+  
+  // Sync state
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [syncProgress, setSyncProgress] = useState(0)
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(new Date('2024-12-19T14:30:45')) // Mock timestamp for prototyping
 
   const psById = new Map(permissionSets.map(ps => [ps.id, ps]))
+
+  // Mock sync function to simulate fetching groups from Azure AD
+  const mockSyncGroups = async () => {
+    setIsSyncing(true)
+    setSyncProgress(0)
+    
+    // Simulate progressive sync with 1000 groups
+    const totalGroups = 1000
+    const batchSize = 50
+    
+    for (let i = 0; i < totalGroups; i += batchSize) {
+      await new Promise(resolve => setTimeout(resolve, 30)) // Simulate network delay
+      
+      const progress = Math.round(((i + batchSize) / totalGroups) * 100)
+      setSyncProgress(Math.min(progress, 100))
+    }
+    
+    setLastSyncTime(new Date())
+    setIsSyncing(false)
+  }
 
   const handleAssignClick = (group: AadGroup) => {
     setSelectedGroup(group)
@@ -186,8 +220,10 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
   }
 
   const handleAddGroup = (group: AadGroup) => {
-    // In a real app, this would add the group to the tenant
-    console.log('Adding group:', group.displayName)
+    // Set the selected group and open the assign modal
+    setSelectedGroup(group)
+    setSelectedUser(null)
+    setAssignModalOpen(true)
     setShowSearch(false)
     setSearchQuery('')
     setSearchResults({groups: [], users: []})
@@ -203,13 +239,18 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
       setIsAddingUser(false)
       setUserAdded(true)
       
-      // Reset the success state after 2 seconds
+      // After showing success, open the assign permission modal
       setTimeout(() => {
         setUserAdded(false)
         setShowSearch(false)
         setSearchQuery('')
         setSearchResults({groups: [], users: []})
-      }, 2000)
+        
+        // Open the assign permission modal for the user
+        setSelectedUser(user)
+        setSelectedGroup(null)
+        setAssignModalOpen(true)
+      }, 2000) // 2 second delay to show success message
     }, 1500) // 1.5 second delay to simulate searching
   }
 
@@ -346,80 +387,85 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
     return psById.get(firstAssignment.permissionSetId)
   }
 
-
   return (
     <>
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Users & Groups from Identity Provider</h3>
-            <div className="flex items-center gap-2">
-              {selectedItems.size > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowBulkAssign(true)}
-                  className="flex items-center gap-2"
-                >
-                  <Filter className="h-4 w-4" />
-                  Bulk Assign ({selectedItems.size})
-                </Button>
-              )}
+            {selectedItems.size > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowBulkAssign(true)}
+                className="flex items-center gap-2"
+              >
+                <Filter className="h-4 w-4" />
+                Bulk Assign ({selectedItems.size})
+              </Button>
+            )}
+          </div>
+
+          {/* Sync Groups Section */}
+          <div className="mt-4 p-4 border rounded-lg bg-muted/50">
+            <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setShowSearch(true)
-                    setSearchMode('groups')
-                    setSearchQuery('')
-                    setSearchResults({groups: [], users: []})
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <Search className="h-4 w-4" />
-                  Search Groups
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setShowSearch(true)
-                    setSearchMode('users')
-                    setSearchQuery('')
-                    setSearchResults({groups: [], users: []})
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add User by Email
-                </Button>
+                <RefreshCw className="h-4 w-4" />
+                <div>
+                  <span className="font-medium">Sync Groups from Azure AD</span>
+                  {lastSyncTime && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Last sync: {lastSyncTime.toLocaleString()}
+                      {totalAvailableGroups > 0 && (
+                        <span className="ml-2">• {totalAvailableGroups.toLocaleString()} groups found</span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
+              <Button 
+                onClick={mockSyncGroups} 
+                disabled={isSyncing}
+                size="sm"
+              >
+                {isSyncing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Syncing...
+                  </>
+                ) : (
+                  'Sync Groups'
+                )}
+              </Button>
             </div>
+            
+            {isSyncing && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Syncing groups...</span>
+                  <span>{syncProgress}%</span>
+                </div>
+                <Progress value={syncProgress} className="h-2" />
+                <p className="text-xs text-muted-foreground">
+                  This may take a few moments for large directories
+                </p>
+              </div>
+            )}
           </div>
           
-          {showSearch && (
-            <div className="mt-4 space-y-4">
-              {/* Mode-specific header */}
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  {searchMode === 'groups' 
-                    ? `${totalAvailableGroups.toLocaleString()} groups available • Start typing to search`
-                    : 'Add a user by entering their email address'
-                  }
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowSearch(false)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+          <div className="mt-4 space-y-4">
+            {/* Mode-specific header */}
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                {searchMode === 'groups' 
+                  ? `${totalAvailableGroups.toLocaleString()} groups available • Start typing to search`
+                  : 'Add a user by entering their email address'
+                }
               </div>
+            </div>
               
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder={searchMode === 'groups' 
                     ? "Search for groups to add..." 
@@ -595,157 +641,21 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                     <div className="text-center py-4 text-muted-foreground">
                       <p>Please enter a valid email address</p>
                     </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Plus className="h-8 w-8 mx-auto mb-2" />
-                      <p>Enter an email address to add a user</p>
-                      <p className="text-xs mt-1">Example: john.doe@company.com</p>
-                    </div>
-                  )}
+                  ) : null}
                 </div>
               )}
               
               {/* Empty states for groups mode */}
-              {searchMode === 'groups' && (
-                <>
-                  {searchQuery.length >= 2 && !isSearching && searchResults.groups.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Search className="h-8 w-8 mx-auto mb-2" />
-                      <p>No groups found matching "{searchQuery}"</p>
-                      <p className="text-xs mt-1">Try a different search term or check spelling</p>
-                    </div>
-                  )}
-                  
-                  {searchQuery.length < 2 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Search className="h-8 w-8 mx-auto mb-2" />
-                      <p>Type at least 2 characters to search groups</p>
-                      <p className="text-xs mt-1">Search by name or description</p>
-                    </div>
-                  )}
-                </>
+              {searchMode === 'groups' && searchQuery.length >= 2 && !isSearching && searchResults.groups.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Search className="h-8 w-8 mx-auto mb-2" />
+                  <p>No groups found matching "{searchQuery}"</p>
+                  <p className="text-xs mt-1">Try a different search term or check spelling</p>
+                </div>
               )}
             </div>
-          )}
 
-          {/* Bulk Assignment Modal */}
-          {showBulkAssign && (
-            <div className="mt-4 p-4 border rounded-lg bg-muted/50">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium">Bulk Assign Reports</h4>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowBulkAssign(false)}
-                >
-                  ×
-                </Button>
-              </div>
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Select reports to assign to {selectedItems.size} selected {activeTab === 'groups' ? 'groups' : 'users'}.
-                </p>
-                
-                <div className="max-h-48 overflow-y-auto space-y-2">
-                  {reports.map((report) => (
-                    <div key={report.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={selectedReports.has(report.id)}
-                        onCheckedChange={(checked: boolean) => handleReportToggle(report.id, checked)}
-                      />
-                      <Label className="flex-1 cursor-pointer">
-                        <div className="flex flex-col">
-                          <span className="font-medium">{report.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            Path: {report.path}
-                          </span>
-                        </div>
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={handleBulkReportAssign} 
-                    disabled={selectedReports.size === 0}
-                  >
-                    Assign {selectedReports.size} Report{selectedReports.size !== 1 ? 's' : ''} to {selectedItems.size} {activeTab === 'groups' ? 'Groups' : 'Users'}
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowBulkAssign(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
 
-          {/* Report Assignment Modal */}
-          {reportAssignMode && reportAssignTarget && (
-            <div className="mt-4 p-4 border rounded-lg bg-blue-50">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium">
-                  Assign Reports to {reportAssignMode === 'group' ? 'Group' : 'User'}: {reportAssignTarget.displayName}
-                </h4>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setReportAssignMode(null)
-                    setReportAssignTarget(null)
-                    setSelectedReports(new Set())
-                  }}
-                >
-                  ×
-                </Button>
-              </div>
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Select one or more reports to assign to this {reportAssignMode}. The {reportAssignMode} will have viewer access to selected reports.
-                </p>
-                
-                <div className="max-h-48 overflow-y-auto space-y-2">
-                  {reports.map((report) => (
-                    <div key={report.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={selectedReports.has(report.id)}
-                        onCheckedChange={(checked: boolean) => handleReportToggle(report.id, checked)}
-                      />
-                      <Label className="flex-1 cursor-pointer">
-                        <div className="flex flex-col">
-                          <span className="font-medium">{report.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            Path: {report.path}
-                          </span>
-                        </div>
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="flex gap-2 pt-2">
-                  <Button 
-                    onClick={handleReportAssign} 
-                    disabled={selectedReports.size === 0}
-                    size="sm"
-                  >
-                    Assign {selectedReports.size} Report{selectedReports.size !== 1 ? 's' : ''}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setReportAssignMode(null)
-                      setReportAssignTarget(null)
-                      setSelectedReports(new Set())
-                    }}
-                    size="sm"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={(value) => {
@@ -783,8 +693,7 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                     <TableRow>
                       <TableHead className="w-12"></TableHead>
                       <TableHead>Group Name</TableHead>
-                      <TableHead>Members</TableHead>
-                      <TableHead>Assigned Set</TableHead>
+                      <TableHead>Permission Set</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -813,9 +722,6 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <span>{members.length} total</span>
-                          </TableCell>
-                          <TableCell>
                             {ps ? (
                               <Badge variant="secondary">{ps.name}</Badge>
                             ) : (
@@ -837,7 +743,7 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                                 variant="outline"
                                 onClick={() => handleAssignClick(group as AadGroup)}
                               >
-                                Change
+                                Change Permissions
                               </Button>
                             </div>
                           </TableCell>
@@ -919,7 +825,6 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                     <TableRow>
                       <TableHead className="w-12"></TableHead>
                       <TableHead>User Name</TableHead>
-                      <TableHead>Email</TableHead>
                       <TableHead>Permission Set</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -946,11 +851,6 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <span className="text-sm">
-                              {(user as AadUser).mail || 'No email'}
-                            </span>
-                          </TableCell>
-                          <TableCell>
                             {effectivePs ? (
                               <Badge variant="secondary">{effectivePs.name}</Badge>
                             ) : (
@@ -972,7 +872,7 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                                 variant="outline"
                                 onClick={() => handleUserOverrideClick(user as AadUser)}
                               >
-                                Override
+                                Change Permissions
                               </Button>
                             </div>
                           </TableCell>
@@ -1041,6 +941,115 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
           tenant={tenant}
         />
       )}
+
+      {/* Bulk Assign Reports Modal */}
+      <Dialog open={showBulkAssign} onOpenChange={setShowBulkAssign}>
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Bulk Assign Reports</DialogTitle>
+            <DialogDescription>
+              Select reports to assign to {selectedItems.size} selected {activeTab === 'groups' ? 'groups' : 'users'}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-auto">
+            <div className="space-y-4">
+              <div className="max-h-96 overflow-y-auto space-y-2">
+                {reports.map((report) => (
+                  <div key={report.id} className="flex items-center space-x-2 p-2 border rounded-lg hover:bg-muted/50">
+                    <Checkbox
+                      checked={selectedReports.has(report.id)}
+                      onCheckedChange={(checked: boolean) => handleReportToggle(report.id, checked)}
+                    />
+                    <Label className="flex-1 cursor-pointer">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{report.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          Path: {report.path}
+                        </span>
+                      </div>
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex-shrink-0">
+            <Button variant="outline" onClick={() => setShowBulkAssign(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleBulkReportAssign} 
+              disabled={selectedReports.size === 0}
+            >
+              Assign {selectedReports.size} Report{selectedReports.size !== 1 ? 's' : ''} to {selectedItems.size} {activeTab === 'groups' ? 'Groups' : 'Users'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Individual Report Assignment Modal */}
+      <Dialog open={!!(reportAssignMode && reportAssignTarget)} onOpenChange={(open) => {
+        if (!open) {
+          setReportAssignMode(null)
+          setReportAssignTarget(null)
+          setSelectedReports(new Set())
+        }
+      }}>
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              Assign Reports to {reportAssignMode === 'group' ? 'Group' : 'User'}: {reportAssignTarget?.displayName}
+            </DialogTitle>
+            <DialogDescription>
+              Select one or more reports to assign to this {reportAssignMode}. The {reportAssignMode} will have viewer access to selected reports.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-auto">
+            <div className="space-y-4">
+              <div className="max-h-96 overflow-y-auto space-y-2">
+                {reports.map((report) => (
+                  <div key={report.id} className="flex items-center space-x-2 p-2 border rounded-lg hover:bg-muted/50">
+                    <Checkbox
+                      checked={selectedReports.has(report.id)}
+                      onCheckedChange={(checked: boolean) => handleReportToggle(report.id, checked)}
+                    />
+                    <Label className="flex-1 cursor-pointer">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{report.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          Path: {report.path}
+                        </span>
+                      </div>
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex-shrink-0">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setReportAssignMode(null)
+                setReportAssignTarget(null)
+                setSelectedReports(new Set())
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleReportAssign} 
+              disabled={selectedReports.size === 0}
+            >
+              Assign {selectedReports.size} Report{selectedReports.size !== 1 ? 's' : ''}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

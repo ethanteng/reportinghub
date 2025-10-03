@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -111,7 +111,7 @@ export function AssignTenantSetModal({
     )
   }, [permissionSets, searchQuery])
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (existingAssignment) {
       // Direct assignment exists
       setSelectedPermissionSetId(existingAssignment.permissionSetId)

@@ -27,12 +27,7 @@ export function PermissionsHub() {
     setGroupRoleWizardOpen
   } = usePermissionsStore()
 
-  // Initialize with default tenant
-  useEffect(() => {
-    if (!currentTenantId) {
-      setCurrentTenantId(tenantContoso.tenantId)
-    }
-  }, [currentTenantId, setCurrentTenantId])
+  // Store is now initialized with default tenant
 
   const currentTenant = currentTenantId ? byTenantId.get(currentTenantId) : null
 
@@ -74,7 +69,7 @@ export function PermissionsHub() {
         </div>
       </header>
 
-      <Tabs defaultValue="reports" className="space-y-4">
+      <Tabs defaultValue="groups" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="reports">Report Access</TabsTrigger>
           <TabsTrigger value="groups">Users & Groups</TabsTrigger>
