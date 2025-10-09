@@ -204,6 +204,34 @@ This project is automatically deployed to Vercel on every push to the `main` bra
 - **Status**: ✅ Auto-deployment enabled
 - **Last Deployed**: $(date)
 
+## 📚 Documentation
+
+Comprehensive documentation is available for planning, development, and deployment:
+
+### **For Stakeholders & Decision Makers**
+- **[📊 STAKEHOLDER_SUMMARY.md](./STAKEHOLDER_SUMMARY.md)** - Business case, ROI analysis, and investment options
+- **[🗺️ ROADMAP_SUMMARY.md](./ROADMAP_SUMMARY.md)** - Visual roadmap, timeline, and team sizing
+
+### **For Product & Project Managers**
+- **[📋 EPICS_AND_MILESTONES.md](./EPICS_AND_MILESTONES.md)** - Detailed feature breakdown with user stories (30 pages)
+- **[🎯 FEATURE_MAP.md](./FEATURE_MAP.md)** - Architecture diagrams and workflows
+
+### **For Developers**
+- **[🏗️ STRUCTURE.md](./STRUCTURE.md)** - Code organization and best practices
+- **[📖 README.md](./README.md)** - This file (setup and tech stack)
+- **[🤖 LLM_PROTOTYPE_REFERENCE.md](./LLM_PROTOTYPE_REFERENCE.md)** - Complete technical reference for AI/LLM (100+ pages)
+
+### **Navigation**
+- **[📚 DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md)** - Complete guide to all documentation
+
+**Quick Links:**
+- 🚀 [MVP Definition (2 months)](./ROADMAP_SUMMARY.md#mvp-definition-minimum-viable-product)
+- 💰 [ROI Analysis](./STAKEHOLDER_SUMMARY.md#investment--roi)
+- 📅 [10 Milestone Roadmap](./ROADMAP_SUMMARY.md#10-milestone-roadmap)
+- 🎯 [Success Metrics](./EPICS_AND_MILESTONES.md#overall-success-metrics)
+
+---
+
 ## License
 
 This project is a prototype for demonstration purposes.
