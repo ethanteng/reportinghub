@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { MultiModelTreeView } from '@/components/studio/MultiModelTreeView';
@@ -22,7 +22,7 @@ const iconMap = {
   [DataSourceType.URL]: Globe,
 };
 
-export default function ModelPage() {
+function ModelPageContent() {
   const searchParams = useSearchParams();
   const { models, selectedEntity, dataSources, agentConfigs, setSelectedEntity, getCurrentAgent } = useBiGeniusStore();
   const [filterWithInstructions, setFilterWithInstructions] = useState(false);
@@ -195,6 +195,14 @@ export default function ModelPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function ModelPage() {
+  return (
+    <Suspense fallback={<div className="h-full flex items-center justify-center">Loading...</div>}>
+      <ModelPageContent />
+    </Suspense>
   );
 }
 

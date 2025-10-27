@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { X, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,7 +10,7 @@ import { InstructionEditor } from './InstructionEditor';
 import { InstructionHistoryView } from './InstructionHistory';
 import { DataSource, Table, Column, ReadinessSeverity } from '../../../lib/types';
 
-export function InspectorPanel() {
+function InspectorPanelContent() {
   const searchParams = useSearchParams();
   const { selectedEntity, setInspectorOpen, setSelectedEntity } = useBiGeniusStore();
   
@@ -238,5 +239,13 @@ function SummaryTab({ entity }: { entity: NonNullable<SelectedEntity> }) {
   }
 
   return null;
+}
+
+export function InspectorPanel() {
+  return (
+    <Suspense fallback={null}>
+      <InspectorPanelContent />
+    </Suspense>
+  );
 }
 
