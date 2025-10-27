@@ -37,6 +37,7 @@ export const dataSources: DataSource[] = [
 const c = (name: string, dataType: string): Column => ({ id: id(), name, dataType });
 const t = (name: string, columns: Column[]): Table => ({ id: id(), name, columns });
 
+// Sales Model (Power BI)
 const salesTable = t("Sales", [
   c("OrderId", "number"),
   c("OrderDate", "date"),
@@ -54,7 +55,7 @@ const customersTable = t("Customers", [
   c("Country", "string"),
 ]);
 
-export const model: SemanticModel = {
+const salesModel: SemanticModel = {
   id: id(),
   sourceId: dataSources[0].id,
   name: "Contoso Sales Model",
@@ -71,9 +72,58 @@ export const model: SemanticModel = {
     },
   ],
 };
-model.instructions![0].targetId = model.id;
+salesModel.instructions![0].targetId = salesModel.id;
 
-// Add table/column-level instructions
+// Warehouse Model (SQL)
+const inventoryTable = t("Inventory", [
+  c("ProductId", "number"),
+  c("ProductName", "string"),
+  c("Quantity", "number"),
+  c("Location", "string"),
+  c("LastUpdated", "date"),
+]);
+
+const ordersTable = t("Orders", [
+  c("OrderId", "number"),
+  c("OrderDate", "date"),
+  c("Status", "string"),
+  c("TotalAmount", "number"),
+]);
+
+const warehouseModel: SemanticModel = {
+  id: id(),
+  sourceId: dataSources[1].id,
+  name: "Warehouse Data Model",
+  versionTag: "v1",
+  tables: [inventoryTable, ordersTable],
+  instructions: [],
+};
+
+// Documentation Model (URL)
+const documentationTable = t("Articles", [
+  c("ArticleId", "number"),
+  c("Title", "string"),
+  c("Content", "string"),
+  c("Category", "string"),
+  c("PublishedDate", "date"),
+]);
+
+const docsModel: SemanticModel = {
+  id: id(),
+  sourceId: dataSources[2].id,
+  name: "Help Documentation",
+  versionTag: "v1",
+  tables: [documentationTable],
+  instructions: [],
+};
+
+// Export all models as an array
+export const models: SemanticModel[] = [salesModel, warehouseModel, docsModel];
+
+// Keep backward compatibility - export the first model as "model"
+export const model: SemanticModel = salesModel;
+
+// Add table/column-level instructions to Sales Model
 const salesFastFacts: Instruction = {
   id: id(),
   scope: InstructionScope.Table,
@@ -98,15 +148,15 @@ salesTable.columns.find(c => c.name === "MarginPct")!.instructions = [marginPctN
 // ---- Analyzer (last run, optional seed) ----
 export const lastAnalyzerRun: AnalyzerRun = {
   id: id(),
-  modelId: model.id,
+  modelId: salesModel.id,
   status: AnalyzerStatus.Success,
   startedAt: new Date(Date.now() - 60_000).toISOString(),
   finishedAt: new Date().toISOString(),
   progress: 1,
   summary: {
     readinessScore: 78,
-    tablesAnalyzed: model.tables.length,
-    columnsAnalyzed: model.tables.reduce((n, t) => n + t.columns.length, 0),
+    tablesAnalyzed: salesModel.tables.length,
+    columnsAnalyzed: salesModel.tables.reduce((n, t) => n + t.columns.length, 0),
     quickWins: 3,
     blockers: 1,
   },
@@ -146,14 +196,14 @@ export const agentConfigs: AgentConfig[] = [
   {
     id: id(),
     name: "Sales Assistant",
-    modelId: model.id,
+    modelId: salesModel.id,
     versionTag: "v1",
     createdAt: new Date().toISOString(),
     instructionIds: [
-      ...(model.instructions ?? []).map(i => i.id),
+      ...(salesModel.instructions ?? []).map(i => i.id),
       salesFastFacts.id,
       marginPctNote.id,
     ],
-    sourceIds: [dataSources[0].id, dataSources[2].id],
+    sourceIds: [dataSources[0].id, dataSources[1].id, dataSources[2].id],
   },
 ];

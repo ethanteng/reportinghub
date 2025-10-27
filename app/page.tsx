@@ -1,7 +1,5 @@
-'use client'
-
-import { PermissionsHub } from '@/components/features/permissions-hub'
+import { redirect } from 'next/navigation';
 
 export default function Home() {
-  return <PermissionsHub />
+  redirect('/sources');
 }
