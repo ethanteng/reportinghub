@@ -1,8 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { SummaryCard } from '@/components/studio/SummaryCard';
+import { EmptyState } from '@/components/studio/EmptyState';
+import { AgentChatWidget } from '@/components/studio/AgentChatWidget';
 import { useBiGeniusStore } from '@/store/useBiGeniusStore';
 import { toast } from 'sonner';
 import {
@@ -16,21 +19,26 @@ import {
   ChevronRight,
   Table2,
   Columns,
+  Play,
 } from 'lucide-react';
-import { AgentConfig } from '../../../lib/types';
+import { AgentConfig, AgentStatus } from '../../../lib/types';
 
 export default function PublishPage() {
-  const { models, dataSources, analyzerRun, getInstructionCount, agentConfigs, addAgentConfig } =
+  const { models, dataSources, getAnalyzerRunForModel, getInstructionCount, agentConfigs, addAgentConfig, getCurrentAgent } =
     useBiGeniusStore();
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+  const [showTestChat, setShowTestChat] = useState(false);
 
+  const currentConfig = agentConfigs[agentConfigs.length - 1];
+  const currentAgent = getCurrentAgent();
+  const connectedSources = dataSources.filter((ds) => 
+    currentConfig?.sourceIds.includes(ds.id)
+  );
+  const model = models.find((m) => m.id === currentConfig?.modelId) || models[0];
+  const analyzerRun = getAnalyzerRunForModel(model?.id);
   const readinessScore = analyzerRun?.summary?.readinessScore || 0;
   const instructionCount = getInstructionCount();
-  const currentConfig = agentConfigs[agentConfigs.length - 1];
-  
-  // Get the first model for clone functionality (backward compatibility)
-  const model = models[0];
 
   const handleClone = () => {
     // Parse version tag (e.g., "v1" -> 1)
@@ -42,7 +50,9 @@ export default function PublishPage() {
       name: `${currentConfig.name} (Clone)`,
       modelId: model.id,
       versionTag: newVersion,
+      status: AgentStatus.Draft, // Clones start as draft
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       clonedFromId: currentConfig.id,
       instructionIds: [...currentConfig.instructionIds],
       sourceIds: [...currentConfig.sourceIds],
@@ -72,15 +82,66 @@ export default function PublishPage() {
     return 'default';
   };
 
+  // Show empty state if no data sources are connected
+  if (connectedSources.length === 0) {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="border-b bg-background sticky top-0 z-10">
+          <div className="px-6 py-4">
+            <h1 className="text-2xl font-semibold">Publish Agent</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Review your configuration and publish your AI agent
+            </p>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <EmptyState
+            icon={Rocket}
+            title="Not Ready to Publish"
+            description="Complete the setup by adding data sources, configuring your model, and running readiness analysis before publishing."
+            action={
+              <Link href="/sources">
+                <Button size="lg">
+                  <Database className="h-4 w-4 mr-2" />
+                  Go to Data Sources
+                </Button>
+              </Link>
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="border-b bg-background sticky top-0 z-10">
         <div className="px-6 py-4">
-          <h1 className="text-2xl font-semibold">Publish Agent</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Review your configuration and publish your AI agent
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold">Publish Agent</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Review your configuration and publish your AI agent
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {currentAgent && (
+                <Button onClick={() => setShowTestChat(true)} variant="outline" size="lg">
+                  <Play className="h-4 w-4 mr-2" />
+                  Test Agent
+                </Button>
+              )}
+              <Button
+                onClick={handlePublish}
+                size="lg"
+                disabled={isPublishing}
+              >
+                <Rocket className="h-4 w-4 mr-2" />
+                {isPublishing ? 'Publishing...' : 'Publish Agent'}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -239,49 +300,6 @@ export default function PublishPage() {
             )}
           </div>
 
-          {/* Agent Details */}
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Agent Details</h2>
-            <div className="bg-muted rounded-lg p-6 space-y-3">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Agent Name</label>
-                <p className="text-base mt-1">{currentConfig.name}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">
-                  Configuration ID
-                </label>
-                <p className="text-base mt-1 font-mono text-sm">{currentConfig.id}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Created</label>
-                <p className="text-base mt-1" suppressHydrationWarning>
-                  {new Date(currentConfig.createdAt).toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Actions</h2>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={handleClone} variant="outline" size="lg" className="flex-1">
-                <Copy className="h-4 w-4 mr-2" />
-                Clone Configuration
-              </Button>
-              <Button
-                onClick={handlePublish}
-                size="lg"
-                className="flex-1"
-                disabled={isPublishing}
-              >
-                <Rocket className="h-4 w-4 mr-2" />
-                {isPublishing ? 'Publishing...' : 'Publish Agent'}
-              </Button>
-            </div>
-          </div>
-
           {/* Published URL */}
           {publishedUrl && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-6">
@@ -316,20 +334,16 @@ export default function PublishPage() {
               </div>
             </div>
           )}
-
-          {/* Recommendations */}
-          {readinessScore > 0 && readinessScore < 80 && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-              <h3 className="font-semibold text-yellow-900 mb-2">Recommendations</h3>
-              <ul className="text-sm text-yellow-700 space-y-1 list-disc list-inside">
-                <li>Your readiness score is below 80. Consider addressing findings first.</li>
-                <li>Review and apply recommendations from the Readiness analysis.</li>
-                <li>Add more instructions to improve query accuracy.</li>
-              </ul>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Test Chat Widget */}
+      {showTestChat && currentAgent && (
+        <AgentChatWidget
+          agent={currentAgent}
+          onClose={() => setShowTestChat(false)}
+        />
+      )}
     </div>
   );
 }

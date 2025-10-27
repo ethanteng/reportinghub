@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useBiGeniusStore } from '@/store/useBiGeniusStore';
 
 interface Step {
   id: string;
@@ -22,6 +23,8 @@ interface Step {
 
 export function StepRail() {
   const pathname = usePathname();
+  const { getCurrentAgent } = useBiGeniusStore();
+  const currentAgent = getCurrentAgent();
 
   const steps: Step[] = [
     {
@@ -60,8 +63,12 @@ export function StepRail() {
       </Link>
 
       <div className="mb-6 px-2">
-        <h2 className="text-lg font-semibold">BI Genius Studio</h2>
-        <p className="text-xs text-muted-foreground mt-1">Agent Configuration</p>
+        <h2 className="text-lg font-semibold truncate" title={currentAgent?.name || 'BI Genius Studio'}>
+          {currentAgent?.name || 'BI Genius Studio'}
+        </h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          {currentAgent ? `Version ${currentAgent.versionTag.replace('v', '')}` : 'Agent Configuration'}
+        </p>
       </div>
 
       {steps.map((step) => {

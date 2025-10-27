@@ -31,7 +31,16 @@ export default function DataSourcesPage() {
     addDataSource,
     removeDataSource,
     setSelectedEntity,
+    getCurrentAgent,
+    updateAgentConfig,
   } = useBiGeniusStore();
+  
+  const currentAgent = getCurrentAgent();
+  
+  // Filter data sources to only show those associated with the current agent
+  const agentDataSources = currentAgent 
+    ? dataSources.filter((ds) => currentAgent.sourceIds.includes(ds.id))
+    : [];
   
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -77,6 +86,14 @@ export default function DataSourcesPage() {
 
   const handleAddSource = (source: typeof dataSources[0]) => {
     addDataSource(source);
+    
+    // Associate the data source with the current agent
+    if (currentAgent) {
+      updateAgentConfig(currentAgent.id, {
+        sourceIds: [...currentAgent.sourceIds, source.id],
+      });
+    }
+    
     toast.success('Data source added');
   };
 
@@ -88,6 +105,14 @@ export default function DataSourcesPage() {
   const handleDeleteConfirm = () => {
     if (sourceToDelete) {
       removeDataSource(sourceToDelete);
+      
+      // Remove the data source from the current agent's sourceIds
+      if (currentAgent) {
+        updateAgentConfig(currentAgent.id, {
+          sourceIds: currentAgent.sourceIds.filter((id) => id !== sourceToDelete),
+        });
+      }
+      
       toast.success('Data source removed');
       setSourceToDelete(null);
     }
@@ -98,21 +123,34 @@ export default function DataSourcesPage() {
     if (selectedSourceIds.length === 0) return;
     
     selectedSourceIds.forEach((id) => removeDataSource(id));
+    
+    // Remove the data sources from the current agent's sourceIds
+    if (currentAgent) {
+      updateAgentConfig(currentAgent.id, {
+        sourceIds: currentAgent.sourceIds.filter((id) => !selectedSourceIds.includes(id)),
+      });
+    }
+    
     toast.success(`Removed ${selectedSourceIds.length} data source${selectedSourceIds.length !== 1 ? 's' : ''}`);
     clearSourceSelection();
   };
 
-  if (dataSources.length === 0) {
+  if (agentDataSources.length === 0) {
+    const isNewAgent = currentAgent?.sourceIds.length === 0;
     return (
       <div className="h-full flex items-center justify-center">
         <EmptyState
           icon={Database}
-          title="No data sources"
-          description="Add a data source to get started"
+          title={isNewAgent ? "Welcome! Let's set up your AI agent" : "No data sources"}
+          description={
+            isNewAgent
+              ? "Connect your first data source to begin building your AI agent. You can add Power BI datasets, SQL databases, or other data sources."
+              : "Add a data source to get started"
+          }
           action={
-            <Button onClick={() => setAddDialogOpen(true)}>
+            <Button onClick={() => setAddDialogOpen(true)} size={isNewAgent ? "lg" : "default"}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Data Source
+              {isNewAgent ? "Add Your First Data Source" : "Add Data Source"}
             </Button>
           }
         />
@@ -170,7 +208,7 @@ export default function DataSourcesPage() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {dataSources.map((source) => (
+          {agentDataSources.map((source) => (
             <SourceCard
               key={source.id}
               source={source}

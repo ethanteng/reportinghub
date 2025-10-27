@@ -78,6 +78,23 @@ export interface Instruction {
   updatedAt?: string;
 }
 
+export enum InstructionChangeType {
+  Added = 'added',
+  Edited = 'edited',
+  Deleted = 'deleted',
+}
+
+export interface InstructionHistory {
+  id: ID;
+  instructionId: ID;
+  changeType: InstructionChangeType;
+  content: string;        // The content at this point in time
+  previousContent?: string; // For edits, what it was before
+  timestamp: string;
+  targetId: ID;           // The entity this instruction applies to
+  scope: InstructionScope;
+}
+
 // Analyzer
 export interface AnalyzerRun {
   id: ID;

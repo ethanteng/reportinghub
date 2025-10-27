@@ -2,13 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { MultiModelTreeView } from '@/components/studio/MultiModelTreeView';
 import { Breadcrumbs } from '@/components/studio/Breadcrumbs';
+import { EmptyState } from '@/components/studio/EmptyState';
+import { AgentChatWidget } from '@/components/studio/AgentChatWidget';
 import { useBiGeniusStore } from '@/store/useBiGeniusStore';
-import { Database, Server, FileText, Globe } from 'lucide-react';
+import { Database, Server, FileText, Globe, Network, Play } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { DataSourceType } from '../../../lib/types';
 
 const iconMap = {
@@ -20,13 +24,15 @@ const iconMap = {
 
 export default function ModelPage() {
   const searchParams = useSearchParams();
-  const { models, selectedEntity, dataSources, agentConfigs, setSelectedEntity } = useBiGeniusStore();
+  const { models, selectedEntity, dataSources, agentConfigs, setSelectedEntity, getCurrentAgent } = useBiGeniusStore();
   const [filterWithInstructions, setFilterWithInstructions] = useState(false);
   const [initialExpandedModels, setInitialExpandedModels] = useState<Set<string>>();
   const [initialExpandedTables, setInitialExpandedTables] = useState<Set<string>>();
+  const [showTestChat, setShowTestChat] = useState(false);
   
   // Get the current agent config to see which sources are connected
   const currentConfig = agentConfigs[agentConfigs.length - 1];
+  const currentAgent = getCurrentAgent();
   const connectedSources = dataSources.filter((ds) => 
     currentConfig?.sourceIds.includes(ds.id)
   );
@@ -80,15 +86,56 @@ export default function ModelPage() {
   // Create a key that changes when URL params change to force tree re-mount
   const treeKey = searchParams.toString();
 
+  // Show empty state if no data sources are connected
+  if (connectedSources.length === 0) {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="border-b bg-background sticky top-0 z-10">
+          <div className="px-6 py-4">
+            <h1 className="text-2xl font-semibold">Semantic Models & Instructions</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Browse model structures, manage instructions, and configure guidance for the AI agent
+            </p>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <EmptyState
+            icon={Network}
+            title="No Data Sources Connected"
+            description="Add data sources first to see and configure semantic models for your AI agent."
+            action={
+              <Link href="/sources">
+                <Button size="lg">
+                  <Database className="h-4 w-4 mr-2" />
+                  Go to Data Sources
+                </Button>
+              </Link>
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="border-b bg-background sticky top-0 z-10">
         <div className="px-6 py-4">
-          <h1 className="text-2xl font-semibold">Semantic Models & Instructions</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Browse model structures, manage instructions, and configure guidance for the AI agent
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold">Semantic Models & Instructions</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Browse model structures, manage instructions, and configure guidance for the AI agent
+              </p>
+            </div>
+            {currentAgent && (
+              <Button onClick={() => setShowTestChat(true)} variant="outline">
+                <Play className="h-4 w-4 mr-2" />
+                Test Agent
+              </Button>
+            )}
+          </div>
         </div>
         
         {/* Connected Data Sources */}
@@ -139,6 +186,14 @@ export default function ModelPage() {
           initialExpandedTables={initialExpandedTables}
         />
       </div>
+
+      {/* Test Chat Widget */}
+      {showTestChat && currentAgent && (
+        <AgentChatWidget
+          agent={currentAgent}
+          onClose={() => setShowTestChat(false)}
+        />
+      )}
     </div>
   );
 }

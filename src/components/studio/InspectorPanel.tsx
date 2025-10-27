@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useBiGeniusStore, SelectedEntity } from '@/store/useBiGeniusStore';
 import { InstructionEditor } from './InstructionEditor';
+import { InstructionHistoryView } from './InstructionHistory';
 import { DataSource, Table, Column, ReadinessSeverity } from '../../../lib/types';
 
 export function InspectorPanel() {
@@ -92,40 +93,42 @@ export function InspectorPanel() {
         </div>
       )}
 
-      {/* Content */}
-      <Tabs defaultValue="summary" className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="mx-4 mt-2">
-          <TabsTrigger value="summary" className="text-xs">
-            Summary
-          </TabsTrigger>
-          {selectedEntity.type !== 'source' && (
-            <TabsTrigger value="instructions" className="text-xs">
-              Instructions
-            </TabsTrigger>
-          )}
-          <TabsTrigger value="lineage" className="text-xs">
-            Lineage
-          </TabsTrigger>
-        </TabsList>
+          {/* Content */}
+          <Tabs defaultValue="instructions" className="flex-1 flex flex-col overflow-hidden">
+            <TabsList className="mx-4 mt-2">
+              <TabsTrigger value="summary" className="text-xs">
+                Summary
+              </TabsTrigger>
+              {selectedEntity.type !== 'source' && (
+                <TabsTrigger value="instructions" className="text-xs">
+                  Instructions
+                </TabsTrigger>
+              )}
+              {selectedEntity.type !== 'source' && (
+                <TabsTrigger value="history" className="text-xs">
+                  History
+                </TabsTrigger>
+              )}
+            </TabsList>
 
-        <div className="flex-1 overflow-y-auto">
-          <TabsContent value="summary" className="p-4 mt-0">
-            <SummaryTab entity={selectedEntity} />
-          </TabsContent>
+            <div className="flex-1 overflow-y-auto">
+              <TabsContent value="summary" className="p-4 mt-0">
+                <SummaryTab entity={selectedEntity} />
+              </TabsContent>
 
-          {selectedEntity.type !== 'source' && (
-            <TabsContent value="instructions" className="p-4 mt-0">
-              <InstructionEditor entity={selectedEntity} />
-            </TabsContent>
-          )}
+              {selectedEntity.type !== 'source' && (
+                <TabsContent value="instructions" className="p-4 mt-0">
+                  <InstructionEditor entity={selectedEntity} />
+                </TabsContent>
+              )}
 
-          <TabsContent value="lineage" className="p-4 mt-0">
-            <div className="text-sm text-muted-foreground">
-              Lineage view coming soon...
+              {selectedEntity.type !== 'source' && (
+                <TabsContent value="history" className="p-4 mt-0">
+                  <InstructionHistoryView entity={selectedEntity} />
+                </TabsContent>
+              )}
             </div>
-          </TabsContent>
-        </div>
-      </Tabs>
+          </Tabs>
     </div>
   );
 }

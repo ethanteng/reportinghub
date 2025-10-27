@@ -8,8 +8,21 @@ import {
   ID,
   Table,
   Column,
+  InstructionHistory,
+  InstructionChangeType,
+  InstructionScope,
 } from '../../lib/types';
-import { dataSources, model, models, lastAnalyzerRun, agentConfigs } from '../../lib/mockData';
+import { 
+  dataSources, 
+  model, 
+  models, 
+  lastAnalyzerRun, 
+  agentConfigs,
+  salesAnalyzerRun,
+  warehouseAnalyzerRun,
+  docsAnalyzerRun,
+  mockInstructionHistory,
+} from '../../lib/mockData';
 
 export type SelectedEntity =
   | { type: 'model'; data: SemanticModel }
@@ -24,12 +37,15 @@ interface BiGeniusStore {
   model: SemanticModel;
   models: SemanticModel[];
   analyzerRun: AnalyzerRun | null;
+  analyzerRuns: Map<ID, AnalyzerRun>; // Map of model ID to analyzer run
   agentConfigs: AgentConfig[];
+  instructionHistory: InstructionHistory[]; // Track all instruction changes
   
   // UI State
   selectedEntity: SelectedEntity;
   selectedSourceIds: ID[];
   inspectorOpen: boolean;
+  currentAgentId: ID | null; // Currently active agent being configured
   
   // Actions
   setDataSources: (sources: DataSource[]) => void;
@@ -40,14 +56,21 @@ interface BiGeniusStore {
   setModels: (models: SemanticModel[]) => void;
   updateModel: (modelId: ID, updates: Partial<SemanticModel>) => void;
   setAnalyzerRun: (run: AnalyzerRun | null) => void;
+  getAnalyzerRunForModel: (modelId: ID) => AnalyzerRun | null;
   setSelectedEntity: (entity: SelectedEntity) => void;
   toggleSourceSelection: (id: ID) => void;
   clearSourceSelection: () => void;
   setInspectorOpen: (open: boolean) => void;
+  setCurrentAgentId: (id: ID | null) => void;
   addAgentConfig: (config: AgentConfig) => void;
   updateAgentConfig: (id: ID, updates: Partial<AgentConfig>) => void;
   deleteAgentConfig: (id: ID) => void;
   cloneAgentConfig: (id: ID) => AgentConfig;
+  getCurrentAgent: () => AgentConfig | null;
+  
+  // Instruction History
+  addInstructionHistory: (entry: InstructionHistory) => void;
+  getInstructionHistoryForEntity: (targetId: ID) => InstructionHistory[];
   
   // Helper to get instruction count
   getInstructionCount: () => number;
@@ -59,12 +82,19 @@ export const useBiGeniusStore = create<BiGeniusStore>((set, get) => ({
   model: model,
   models: [...models],
   analyzerRun: lastAnalyzerRun,
+  analyzerRuns: new Map([
+    [salesAnalyzerRun.modelId, salesAnalyzerRun],
+    [warehouseAnalyzerRun.modelId, warehouseAnalyzerRun],
+    [docsAnalyzerRun.modelId, docsAnalyzerRun],
+  ]),
   agentConfigs: [...agentConfigs],
+  instructionHistory: [...mockInstructionHistory],
   
   // Initial UI state
   selectedEntity: null,
   selectedSourceIds: [],
   inspectorOpen: false,
+  currentAgentId: agentConfigs.length > 0 ? agentConfigs[agentConfigs.length - 1].id : null,
   
   // Actions
   setDataSources: (sources) => set({ dataSources: sources }),
@@ -102,6 +132,11 @@ export const useBiGeniusStore = create<BiGeniusStore>((set, get) => ({
   
   setAnalyzerRun: (run) => set({ analyzerRun: run }),
   
+  getAnalyzerRunForModel: (modelId) => {
+    const state = get();
+    return state.analyzerRuns.get(modelId) || null;
+  },
+  
   setSelectedEntity: (entity) =>
     set({ selectedEntity: entity, inspectorOpen: entity !== null }),
   
@@ -116,9 +151,18 @@ export const useBiGeniusStore = create<BiGeniusStore>((set, get) => ({
   
   setInspectorOpen: (open) => set({ inspectorOpen: open }),
   
+  setCurrentAgentId: (id) => set({ currentAgentId: id }),
+  
+  getCurrentAgent: () => {
+    const state = get();
+    if (!state.currentAgentId) return null;
+    return state.agentConfigs.find((config) => config.id === state.currentAgentId) || null;
+  },
+  
   addAgentConfig: (config) =>
     set((state) => ({
       agentConfigs: [...state.agentConfigs, config],
+      currentAgentId: config.id, // Set as current agent when created
     })),
   
   updateAgentConfig: (id, updates) =>
@@ -177,6 +221,19 @@ export const useBiGeniusStore = create<BiGeniusStore>((set, get) => ({
     });
     
     return count;
+  },
+
+  // Instruction History Actions
+  addInstructionHistory: (entry) => 
+    set((state) => ({
+      instructionHistory: [...state.instructionHistory, entry],
+    })),
+
+  getInstructionHistoryForEntity: (targetId) => {
+    const state = get();
+    return state.instructionHistory
+      .filter((h) => h.targetId === targetId)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   },
 }));
 

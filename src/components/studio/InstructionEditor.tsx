@@ -7,14 +7,14 @@ import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBiGeniusStore, SelectedEntity } from '@/store/useBiGeniusStore';
 import { addInstruction } from '../../../lib/mockServices';
-import { InstructionScope, Instruction } from '../../../lib/types';
+import { InstructionScope, Instruction, InstructionChangeType, ID } from '../../../lib/types';
 
 interface InstructionEditorProps {
   entity: SelectedEntity;
 }
 
 export function InstructionEditor({ entity }: InstructionEditorProps) {
-  const { models, setModels } = useBiGeniusStore();
+  const { models, setModels, addInstructionHistory } = useBiGeniusStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newContent, setNewContent] = useState('');
 
@@ -71,6 +71,17 @@ export function InstructionEditor({ entity }: InstructionEditorProps) {
 
     const instruction = addInstruction(getScope(), getTargetId(), newContent.trim());
 
+    // Record history
+    addInstructionHistory({
+      id: `history_${Date.now()}` as ID,
+      instructionId: instruction.id,
+      changeType: InstructionChangeType.Added,
+      content: instruction.content,
+      timestamp: new Date().toISOString(),
+      targetId: instruction.targetId,
+      scope: instruction.scope,
+    });
+
     // Update the model in store
     const updatedModels = models.map((m) => {
       if (m.id !== currentModel.id) return m;
@@ -104,6 +115,23 @@ export function InstructionEditor({ entity }: InstructionEditorProps) {
 
   const handleDelete = (instructionId: string) => {
     if (!currentModel) return;
+
+    // Find the instruction being deleted to record its content
+    const instructions = getInstructions();
+    const deletedInstruction = instructions.find((i) => i.id === instructionId);
+
+    if (deletedInstruction) {
+      // Record history
+      addInstructionHistory({
+        id: `history_${Date.now()}` as ID,
+        instructionId: deletedInstruction.id,
+        changeType: InstructionChangeType.Deleted,
+        content: deletedInstruction.content,
+        timestamp: new Date().toISOString(),
+        targetId: deletedInstruction.targetId,
+        scope: deletedInstruction.scope,
+      });
+    }
 
     const updatedModels = models.map((m) => {
       if (m.id !== currentModel.id) return m;

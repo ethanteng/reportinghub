@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AgentCard } from '@/components/studio/AgentCard';
+import { AgentChatWidget } from '@/components/studio/AgentChatWidget';
 import { useBiGeniusStore } from '@/store/useBiGeniusStore';
 import { Plus, Search } from 'lucide-react';
 import { toast } from 'sonner';
@@ -27,14 +28,19 @@ export default function AgentsPage() {
     deleteAgentConfig,
     cloneAgentConfig,
     addAgentConfig,
+    setCurrentAgentId,
   } = useBiGeniusStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
+  const [newAgentName, setNewAgentName] = useState('');
+  const [testingAgentId, setTestingAgentId] = useState<string | null>(null);
 
   const selectedAgent = agentConfigs.find((a) => a.id === selectedAgentId);
+  const testingAgent = agentConfigs.find((a) => a.id === testingAgentId);
 
   const filteredAgents = agentConfigs.filter((agent) => {
     if (searchQuery) {
@@ -44,8 +50,8 @@ export default function AgentsPage() {
   });
 
   const handleConfigure = (agentId: string) => {
-    // TODO: Navigate to agent configuration with agent ID
-    router.push('/sources'); // For now, just go to sources
+    setCurrentAgentId(agentId);
+    router.push('/sources');
   };
 
   const handleRename = (agentId: string) => {
@@ -85,19 +91,39 @@ export default function AgentsPage() {
     toast.success('Agent published successfully!');
   };
 
+  const handleTest = (agentId: string) => {
+    setTestingAgentId(agentId);
+  };
+
   const handleCreateNew = () => {
+    setNewAgentName('');
+    setShowCreateDialog(true);
+  };
+
+  const handleCreateConfirm = () => {
+    if (!newAgentName.trim()) {
+      toast.error('Please enter an agent name');
+      return;
+    }
+
     const newAgent = {
       id: `agent_${Date.now()}` as any,
-      name: 'New Agent',
-      modelId: '' as any,
+      name: newAgentName.trim(),
+      modelId: '' as any, // Blank model ID - user needs to add data sources first
       versionTag: 'v1',
       status: AgentStatus.Draft,
       createdAt: new Date().toISOString(),
       instructionIds: [],
       sourceIds: [],
     };
+    
     addAgentConfig(newAgent);
-    router.push('/sources'); // Navigate to configuration
+    toast.success(`Agent "${newAgentName}" created! Add data sources to begin.`);
+    setShowCreateDialog(false);
+    setNewAgentName('');
+    
+    // Navigate to sources page to start configuration
+    router.push('/sources');
   };
 
   return (
@@ -159,6 +185,7 @@ export default function AgentsPage() {
                 onClone={handleClone}
                 onDelete={handleDelete}
                 onPublish={handlePublish}
+                onTest={handleTest}
               />
             ))}
           </div>
@@ -198,6 +225,52 @@ export default function AgentsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create New Agent Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New AI Agent</DialogTitle>
+            <DialogDescription>
+              Give your AI agent a name. You'll configure data sources and instructions next.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="newAgentName">Agent Name</Label>
+              <Input
+                id="newAgentName"
+                placeholder="e.g., Sales Assistant, Support Bot"
+                value={newAgentName}
+                onChange={(e) => setNewAgentName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleCreateConfirm();
+                  }
+                }}
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleCreateConfirm}>Create Agent</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Chat Widget */}
+      {testingAgent && (
+        <AgentChatWidget
+          agent={testingAgent}
+          onClose={() => setTestingAgentId(null)}
+        />
+      )}
     </div>
   );
 }

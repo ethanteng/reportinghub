@@ -39,6 +39,7 @@ interface AgentCardProps {
   onClone: (agentId: string) => void;
   onDelete: (agentId: string) => void;
   onPublish: (agentId: string) => void;
+  onTest: (agentId: string) => void;
 }
 
 export function AgentCard({
@@ -48,6 +49,7 @@ export function AgentCard({
   onClone,
   onDelete,
   onPublish,
+  onTest,
 }: AgentCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -143,22 +145,19 @@ export function AgentCard({
               <FileEdit className="h-4 w-4 mr-2" />
               Configure
             </Button>
-            {agent.status === AgentStatus.Draft && (
-              <Button
-                onClick={() => onPublish(agent.id)}
-                size="sm"
-                className="flex-1"
-              >
-                <Rocket className="h-4 w-4 mr-2" />
-                Publish
-              </Button>
-            )}
-            {agent.status === AgentStatus.Live && (
-              <Button size="sm" className="flex-1">
-                <Play className="h-4 w-4 mr-2" />
-                Test
-              </Button>
-            )}
+            <Button onClick={() => onTest(agent.id)} size="sm" className="flex-1">
+              <Play className="h-4 w-4 mr-2" />
+              Test
+            </Button>
+            <Button
+              onClick={() => onPublish(agent.id)}
+              size="sm"
+              className="flex-1"
+              disabled={agent.status === AgentStatus.Live}
+            >
+              <Rocket className="h-4 w-4 mr-2" />
+              Publish
+            </Button>
           </div>
         </div>
       </Card>

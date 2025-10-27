@@ -1,6 +1,7 @@
 import {
   AgentConfig, AgentStatus, AnalyzerRun, AnalyzerStatus, Column, DataSource, DataSourceType,
-  Instruction, InstructionScope, ReadinessSeverity, SemanticModel, SyncStatus, Table, ID
+  Instruction, InstructionScope, ReadinessSeverity, SemanticModel, SyncStatus, Table, ID,
+  InstructionHistory, InstructionChangeType
 } from "./types";
 
 const id = (() => { let n = 0; return () => `id_${++n}` as ID; })();
@@ -77,17 +78,34 @@ salesModel.instructions![0].targetId = salesModel.id;
 // Warehouse Model (SQL)
 const inventoryTable = t("Inventory", [
   c("ProductId", "number"),
+  c("SKU", "string"),
   c("ProductName", "string"),
-  c("Quantity", "number"),
+  c("Category", "string"),
+  c("QuantityOnHand", "number"),
+  c("ReorderLevel", "number"),
+  c("UnitCost", "decimal"),
   c("Location", "string"),
-  c("LastUpdated", "date"),
+  c("LastStockCheck", "date"),
 ]);
 
 const ordersTable = t("Orders", [
   c("OrderId", "number"),
   c("OrderDate", "date"),
   c("Status", "string"),
+  c("CustomerId", "number"),
   c("TotalAmount", "number"),
+  c("ShippingMethod", "string"),
+  c("EstimatedDelivery", "date"),
+]);
+
+const shipmentsTable = t("Shipments", [
+  c("ShipmentId", "number"),
+  c("OrderId", "number"),
+  c("TrackingNumber", "string"),
+  c("Carrier", "string"),
+  c("ShipDate", "date"),
+  c("DeliveryDate", "date"),
+  c("Status", "string"),
 ]);
 
 const warehouseModel: SemanticModel = {
@@ -95,9 +113,19 @@ const warehouseModel: SemanticModel = {
   sourceId: dataSources[1].id,
   name: "Warehouse Data Model",
   versionTag: "v1",
-  tables: [inventoryTable, ordersTable],
-  instructions: [],
+  tables: [inventoryTable, ordersTable, shipmentsTable],
+  instructions: [
+    {
+      id: id(),
+      scope: InstructionScope.Model,
+      targetId: "" as ID,
+      content:
+        "Focus on inventory levels and fulfillment metrics. Always highlight items below reorder level.",
+      createdAt: new Date().toISOString(),
+    },
+  ],
 };
+warehouseModel.instructions![0].targetId = warehouseModel.id;
 
 // Documentation Model (URL)
 const documentationTable = t("Articles", [
@@ -105,7 +133,29 @@ const documentationTable = t("Articles", [
   c("Title", "string"),
   c("Content", "string"),
   c("Category", "string"),
+  c("Tags", "string"),
+  c("Author", "string"),
   c("PublishedDate", "date"),
+  c("LastModified", "date"),
+  c("ViewCount", "number"),
+]);
+
+const faqTable = t("FAQ", [
+  c("FAQId", "number"),
+  c("Question", "string"),
+  c("Answer", "string"),
+  c("Category", "string"),
+  c("HelpfulCount", "number"),
+  c("CreatedDate", "date"),
+]);
+
+const searchLogsTable = t("SearchLogs", [
+  c("SearchId", "number"),
+  c("SearchTerm", "string"),
+  c("ResultCount", "number"),
+  c("ClickedArticleId", "number"),
+  c("SearchDate", "datetime"),
+  c("UserId", "string"),
 ]);
 
 const docsModel: SemanticModel = {
@@ -113,9 +163,19 @@ const docsModel: SemanticModel = {
   sourceId: dataSources[2].id,
   name: "Help Documentation",
   versionTag: "v1",
-  tables: [documentationTable],
-  instructions: [],
+  tables: [documentationTable, faqTable, searchLogsTable],
+  instructions: [
+    {
+      id: id(),
+      scope: InstructionScope.Model,
+      targetId: "" as ID,
+      content:
+        "Prioritize recent and high-view count articles. Use natural language when referencing article titles.",
+      createdAt: new Date().toISOString(),
+    },
+  ],
 };
+docsModel.instructions![0].targetId = docsModel.id;
 
 // Export all models as an array
 export const models: SemanticModel[] = [salesModel, warehouseModel, docsModel];
@@ -145,8 +205,84 @@ const marginPctNote: Instruction = {
 salesTable.instructions = [salesFastFacts];
 salesTable.columns.find(c => c.name === "MarginPct")!.instructions = [marginPctNote];
 
-// ---- Analyzer (last run, optional seed) ----
-export const lastAnalyzerRun: AnalyzerRun = {
+// Add table/column-level instructions to Warehouse Model
+const inventoryInstruction: Instruction = {
+  id: id(),
+  scope: InstructionScope.Table,
+  targetId: inventoryTable.id,
+  content:
+    "QuantityOnHand represents current stock. Flag items where QuantityOnHand < ReorderLevel as needing restock.",
+  createdAt: new Date().toISOString(),
+};
+
+const quantityOnHandNote: Instruction = {
+  id: id(),
+  scope: InstructionScope.Column,
+  targetId: inventoryTable.columns.find(c => c.name === "QuantityOnHand")!.id,
+  content:
+    "Always compare with ReorderLevel. Highlight low stock situations prominently.",
+  createdAt: new Date().toISOString(),
+};
+
+const shipmentsInstruction: Instruction = {
+  id: id(),
+  scope: InstructionScope.Table,
+  targetId: shipmentsTable.id,
+  content:
+    "Status values: Pending, Shipped, In Transit, Delivered, Cancelled. Calculate delivery time as DeliveryDate - ShipDate.",
+  createdAt: new Date().toISOString(),
+};
+
+inventoryTable.instructions = [inventoryInstruction];
+inventoryTable.columns.find(c => c.name === "QuantityOnHand")!.instructions = [quantityOnHandNote];
+shipmentsTable.instructions = [shipmentsInstruction];
+
+// Add table/column-level instructions to Documentation Model
+const articlesInstruction: Instruction = {
+  id: id(),
+  scope: InstructionScope.Table,
+  targetId: documentationTable.id,
+  content:
+    "ViewCount indicates popularity. Sort by PublishedDate desc for latest content, or by ViewCount desc for most popular.",
+  createdAt: new Date().toISOString(),
+};
+
+const viewCountNote: Instruction = {
+  id: id(),
+  scope: InstructionScope.Column,
+  targetId: documentationTable.columns.find(c => c.name === "ViewCount")!.id,
+  content:
+    "High view count (>1000) indicates important articles. Use this as a relevance signal.",
+  createdAt: new Date().toISOString(),
+};
+
+const faqInstruction: Instruction = {
+  id: id(),
+  scope: InstructionScope.Table,
+  targetId: faqTable.id,
+  content:
+    "FAQ items are concise Q&A pairs. HelpfulCount shows user ratings. Prioritize FAQs with high helpful counts.",
+  createdAt: new Date().toISOString(),
+};
+
+const searchLogsInstruction: Instruction = {
+  id: id(),
+  scope: InstructionScope.Table,
+  targetId: searchLogsTable.id,
+  content:
+    "Analyze search patterns to identify gaps in documentation. Look for searches with low ResultCount.",
+  createdAt: new Date().toISOString(),
+};
+
+documentationTable.instructions = [articlesInstruction];
+documentationTable.columns.find(c => c.name === "ViewCount")!.instructions = [viewCountNote];
+faqTable.instructions = [faqInstruction];
+searchLogsTable.instructions = [searchLogsInstruction];
+
+// ---- Analyzer Runs (per model) ----
+
+// Sales Model Analysis
+export const salesAnalyzerRun: AnalyzerRun = {
   id: id(),
   modelId: salesModel.id,
   status: AnalyzerStatus.Success,
@@ -191,6 +327,110 @@ export const lastAnalyzerRun: AnalyzerRun = {
   ],
 };
 
+// Warehouse Model Analysis
+export const warehouseAnalyzerRun: AnalyzerRun = {
+  id: id(),
+  modelId: warehouseModel.id,
+  status: AnalyzerStatus.Success,
+  startedAt: new Date(Date.now() - 120_000).toISOString(),
+  finishedAt: new Date(Date.now() - 60_000).toISOString(),
+  progress: 1,
+  summary: {
+    readinessScore: 85,
+    tablesAnalyzed: warehouseModel.tables.length,
+    columnsAnalyzed: warehouseModel.tables.reduce((n, t) => n + t.columns.length, 0),
+    quickWins: 2,
+    blockers: 0,
+  },
+  findings: [
+    {
+      id: id(),
+      severity: ReadinessSeverity.Warn,
+      entityType: "table",
+      entityId: ordersTable.id,
+      title: "Missing relationship to Shipments table",
+      recommendation:
+        "Define explicit join on OrderId to enable tracking queries across orders and shipments.",
+    },
+    {
+      id: id(),
+      severity: ReadinessSeverity.Warn,
+      entityType: "column",
+      entityId: inventoryTable.columns.find(c => c.name === "Location")!.id,
+      title: "Location values need standardization",
+      recommendation:
+        "Standardize warehouse location codes (e.g., 'WH-A1', 'WH-B2') to avoid confusion with free-text entries.",
+    },
+    {
+      id: id(),
+      severity: ReadinessSeverity.Info,
+      entityType: "column",
+      entityId: shipmentsTable.columns.find(c => c.name === "Status")!.id,
+      title: "Add status transition rules",
+      recommendation:
+        "Document valid status transitions (e.g., Pending → Shipped → Delivered) to help AI understand shipment lifecycle.",
+    },
+    {
+      id: id(),
+      severity: ReadinessSeverity.Info,
+      entityType: "table",
+      entityId: inventoryTable.id,
+      title: "Consider adding supplier information",
+      recommendation:
+        "Add a Suppliers dimension table to enable supply chain queries and lead time analysis.",
+    },
+  ],
+};
+
+// Documentation Model Analysis
+export const docsAnalyzerRun: AnalyzerRun = {
+  id: id(),
+  modelId: docsModel.id,
+  status: AnalyzerStatus.Success,
+  startedAt: new Date(Date.now() - 180_000).toISOString(),
+  finishedAt: new Date(Date.now() - 120_000).toISOString(),
+  progress: 1,
+  summary: {
+    readinessScore: 92,
+    tablesAnalyzed: docsModel.tables.length,
+    columnsAnalyzed: docsModel.tables.reduce((n, t) => n + t.columns.length, 0),
+    quickWins: 1,
+    blockers: 0,
+  },
+  findings: [
+    {
+      id: id(),
+      severity: ReadinessSeverity.Info,
+      entityType: "column",
+      entityId: documentationTable.columns.find(c => c.name === "Tags")!.id,
+      title: "Define tag taxonomy",
+      recommendation:
+        "Create a controlled vocabulary for tags to improve searchability and categorization consistency.",
+    },
+    {
+      id: id(),
+      severity: ReadinessSeverity.Info,
+      entityType: "column",
+      entityId: searchLogsTable.columns.find(c => c.name === "SearchTerm")!.id,
+      title: "Add stemming guidance for search terms",
+      recommendation:
+        "Document how search term variants should be handled (e.g., 'setup' vs 'set up' vs 'setting up').",
+    },
+    {
+      id: id(),
+      severity: ReadinessSeverity.Info,
+      entityType: "table",
+      entityId: faqTable.id,
+      title: "Link FAQs to related articles",
+      recommendation:
+        "Add a RelatedArticleId field to enable cross-referencing between FAQ answers and detailed articles.",
+    },
+  ],
+};
+
+// Default analyzer run (backward compatibility)
+export const lastAnalyzerRun: AnalyzerRun = salesAnalyzerRun;
+
 // ---- Agent Configs (versioned) ----
 const now = new Date();
 const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -221,7 +461,12 @@ export const agentConfigs: AgentConfig[] = [
     status: AgentStatus.Draft,
     createdAt: yesterday.toISOString(),
     updatedAt: now.toISOString(),
-    instructionIds: [],
+    instructionIds: [
+      ...(warehouseModel.instructions ?? []).map(i => i.id),
+      inventoryInstruction.id,
+      quantityOnHandNote.id,
+      shipmentsInstruction.id,
+    ],
     sourceIds: [dataSources[1].id],
   },
   {
@@ -231,7 +476,280 @@ export const agentConfigs: AgentConfig[] = [
     versionTag: "v1",
     status: AgentStatus.Draft,
     createdAt: now.toISOString(),
-    instructionIds: [],
+    instructionIds: [
+      ...(docsModel.instructions ?? []).map(i => i.id),
+      articlesInstruction.id,
+      viewCountNote.id,
+      faqInstruction.id,
+      searchLogsInstruction.id,
+    ],
     sourceIds: [dataSources[2].id],
+  },
+];
+
+// ---- Instruction History (Mock Evolution) ----
+
+// Helper to create timestamps
+const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+const hoursAgo = (hours: number) => new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+
+export const mockInstructionHistory: InstructionHistory[] = [
+  // === Sales Model History ===
+  
+  // Sales Model - Model-level instruction evolution
+  {
+    id: id(),
+    instructionId: salesModel.instructions![0].id,
+    changeType: InstructionChangeType.Added,
+    content: "Focus on revenue and margin analysis.",
+    timestamp: daysAgo(14),
+    targetId: salesModel.id,
+    scope: InstructionScope.Model,
+  },
+  {
+    id: id(),
+    instructionId: salesModel.instructions![0].id,
+    changeType: InstructionChangeType.Edited,
+    content: "Focus on revenue, margin analysis, and customer segmentation.",
+    previousContent: "Focus on revenue and margin analysis.",
+    timestamp: daysAgo(10),
+    targetId: salesModel.id,
+    scope: InstructionScope.Model,
+  },
+  {
+    id: id(),
+    instructionId: salesModel.instructions![0].id,
+    changeType: InstructionChangeType.Edited,
+    content: salesModel.instructions![0].content,
+    previousContent: "Focus on revenue, margin analysis, and customer segmentation.",
+    timestamp: daysAgo(7),
+    targetId: salesModel.id,
+    scope: InstructionScope.Model,
+  },
+  
+  // Sales Table - KPI instruction
+  {
+    id: id(),
+    instructionId: salesFastFacts.id,
+    changeType: InstructionChangeType.Added,
+    content: "When asked for KPIs, include Revenue and Cost.",
+    timestamp: daysAgo(12),
+    targetId: salesTable.id,
+    scope: InstructionScope.Table,
+  },
+  {
+    id: id(),
+    instructionId: salesFastFacts.id,
+    changeType: InstructionChangeType.Edited,
+    content: salesFastFacts.content,
+    previousContent: "When asked for KPIs, include Revenue and Cost.",
+    timestamp: daysAgo(8),
+    targetId: salesTable.id,
+    scope: InstructionScope.Table,
+  },
+  
+  // MarginPct Column
+  {
+    id: id(),
+    instructionId: marginPctNote.id,
+    changeType: InstructionChangeType.Added,
+    content: "MarginPct is a percentage. Always format as percentage.",
+    timestamp: daysAgo(9),
+    targetId: salesTable.columns.find(c => c.name === "MarginPct")!.id,
+    scope: InstructionScope.Column,
+  },
+  {
+    id: id(),
+    instructionId: marginPctNote.id,
+    changeType: InstructionChangeType.Edited,
+    content: marginPctNote.content,
+    previousContent: "MarginPct is a percentage. Always format as percentage.",
+    timestamp: daysAgo(6),
+    targetId: salesTable.columns.find(c => c.name === "MarginPct")!.id,
+    scope: InstructionScope.Column,
+  },
+  
+  // Deleted instruction example (Revenue column - no longer exists)
+  {
+    id: id(),
+    instructionId: "deleted_revenue_instruction" as ID,
+    changeType: InstructionChangeType.Added,
+    content: "Revenue should always be shown in USD with $ symbol.",
+    timestamp: daysAgo(11),
+    targetId: salesTable.columns.find(c => c.name === "Revenue")!.id,
+    scope: InstructionScope.Column,
+  },
+  {
+    id: id(),
+    instructionId: "deleted_revenue_instruction" as ID,
+    changeType: InstructionChangeType.Deleted,
+    content: "Revenue should always be shown in USD with $ symbol.",
+    timestamp: daysAgo(5),
+    targetId: salesTable.columns.find(c => c.name === "Revenue")!.id,
+    scope: InstructionScope.Column,
+  },
+  
+  // === Warehouse Model History ===
+  
+  // Warehouse Model - Model-level
+  {
+    id: id(),
+    instructionId: warehouseModel.instructions![0].id,
+    changeType: InstructionChangeType.Added,
+    content: "Focus on inventory tracking.",
+    timestamp: daysAgo(6),
+    targetId: warehouseModel.id,
+    scope: InstructionScope.Model,
+  },
+  {
+    id: id(),
+    instructionId: warehouseModel.instructions![0].id,
+    changeType: InstructionChangeType.Edited,
+    content: warehouseModel.instructions![0].content,
+    previousContent: "Focus on inventory tracking.",
+    timestamp: daysAgo(3),
+    targetId: warehouseModel.id,
+    scope: InstructionScope.Model,
+  },
+  
+  // Inventory Table
+  {
+    id: id(),
+    instructionId: inventoryInstruction.id,
+    changeType: InstructionChangeType.Added,
+    content: inventoryInstruction.content,
+    timestamp: daysAgo(5),
+    targetId: inventoryTable.id,
+    scope: InstructionScope.Table,
+  },
+  
+  // QuantityOnHand Column
+  {
+    id: id(),
+    instructionId: quantityOnHandNote.id,
+    changeType: InstructionChangeType.Added,
+    content: "Compare with ReorderLevel to identify low stock.",
+    timestamp: daysAgo(4),
+    targetId: inventoryTable.columns.find(c => c.name === "QuantityOnHand")!.id,
+    scope: InstructionScope.Column,
+  },
+  {
+    id: id(),
+    instructionId: quantityOnHandNote.id,
+    changeType: InstructionChangeType.Edited,
+    content: quantityOnHandNote.content,
+    previousContent: "Compare with ReorderLevel to identify low stock.",
+    timestamp: hoursAgo(48),
+    targetId: inventoryTable.columns.find(c => c.name === "QuantityOnHand")!.id,
+    scope: InstructionScope.Column,
+  },
+  
+  // Shipments Table
+  {
+    id: id(),
+    instructionId: shipmentsInstruction.id,
+    changeType: InstructionChangeType.Added,
+    content: shipmentsInstruction.content,
+    timestamp: hoursAgo(36),
+    targetId: shipmentsTable.id,
+    scope: InstructionScope.Table,
+  },
+  
+  // === Documentation Model History ===
+  
+  // Documentation Model - Model-level
+  {
+    id: id(),
+    instructionId: docsModel.instructions![0].id,
+    changeType: InstructionChangeType.Added,
+    content: "Focus on helping users find relevant documentation.",
+    timestamp: hoursAgo(72),
+    targetId: docsModel.id,
+    scope: InstructionScope.Model,
+  },
+  {
+    id: id(),
+    instructionId: docsModel.instructions![0].id,
+    changeType: InstructionChangeType.Edited,
+    content: docsModel.instructions![0].content,
+    previousContent: "Focus on helping users find relevant documentation.",
+    timestamp: hoursAgo(24),
+    targetId: docsModel.id,
+    scope: InstructionScope.Model,
+  },
+  
+  // Articles Table
+  {
+    id: id(),
+    instructionId: articlesInstruction.id,
+    changeType: InstructionChangeType.Added,
+    content: articlesInstruction.content,
+    timestamp: hoursAgo(60),
+    targetId: documentationTable.id,
+    scope: InstructionScope.Table,
+  },
+  
+  // ViewCount Column
+  {
+    id: id(),
+    instructionId: viewCountNote.id,
+    changeType: InstructionChangeType.Added,
+    content: "High view count indicates important articles.",
+    timestamp: hoursAgo(48),
+    targetId: documentationTable.columns.find(c => c.name === "ViewCount")!.id,
+    scope: InstructionScope.Column,
+  },
+  {
+    id: id(),
+    instructionId: viewCountNote.id,
+    changeType: InstructionChangeType.Edited,
+    content: viewCountNote.content,
+    previousContent: "High view count indicates important articles.",
+    timestamp: hoursAgo(12),
+    targetId: documentationTable.columns.find(c => c.name === "ViewCount")!.id,
+    scope: InstructionScope.Column,
+  },
+  
+  // FAQ Table
+  {
+    id: id(),
+    instructionId: faqInstruction.id,
+    changeType: InstructionChangeType.Added,
+    content: faqInstruction.content,
+    timestamp: hoursAgo(36),
+    targetId: faqTable.id,
+    scope: InstructionScope.Table,
+  },
+  
+  // SearchLogs Table
+  {
+    id: id(),
+    instructionId: searchLogsInstruction.id,
+    changeType: InstructionChangeType.Added,
+    content: "Track search patterns to identify documentation gaps.",
+    timestamp: hoursAgo(24),
+    targetId: searchLogsTable.id,
+    scope: InstructionScope.Table,
+  },
+  {
+    id: id(),
+    instructionId: searchLogsInstruction.id,
+    changeType: InstructionChangeType.Edited,
+    content: searchLogsInstruction.content,
+    previousContent: "Track search patterns to identify documentation gaps.",
+    timestamp: hoursAgo(6),
+    targetId: searchLogsTable.id,
+    scope: InstructionScope.Table,
+  },
+  
+  // Recent addition example
+  {
+    id: id(),
+    instructionId: "recent_addition" as ID,
+    changeType: InstructionChangeType.Added,
+    content: "When referencing timestamps, always use user's local timezone.",
+    timestamp: hoursAgo(2),
+    targetId: documentationTable.columns.find(c => c.name === "PublishedDate")!.id,
+    scope: InstructionScope.Column,
   },
 ];
