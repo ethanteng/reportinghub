@@ -4,6 +4,7 @@ import {
   SemanticModel,
   AnalyzerRun,
   AgentConfig,
+  AgentStatus,
   ID,
   Table,
   Column,
@@ -44,6 +45,9 @@ interface BiGeniusStore {
   clearSourceSelection: () => void;
   setInspectorOpen: (open: boolean) => void;
   addAgentConfig: (config: AgentConfig) => void;
+  updateAgentConfig: (id: ID, updates: Partial<AgentConfig>) => void;
+  deleteAgentConfig: (id: ID) => void;
+  cloneAgentConfig: (id: ID) => AgentConfig;
   
   // Helper to get instruction count
   getInstructionCount: () => number;
@@ -116,6 +120,45 @@ export const useBiGeniusStore = create<BiGeniusStore>((set, get) => ({
     set((state) => ({
       agentConfigs: [...state.agentConfigs, config],
     })),
+  
+  updateAgentConfig: (id, updates) =>
+    set((state) => ({
+      agentConfigs: state.agentConfigs.map((config) =>
+        config.id === id
+          ? { ...config, ...updates, updatedAt: new Date().toISOString() }
+          : config
+      ),
+    })),
+  
+  deleteAgentConfig: (id) =>
+    set((state) => ({
+      agentConfigs: state.agentConfigs.filter((config) => config.id !== id),
+    })),
+  
+  cloneAgentConfig: (id) => {
+    const state = get();
+    const original = state.agentConfigs.find((config) => config.id === id);
+    if (!original) throw new Error('Agent not found');
+    
+    const versionNum = parseInt(original.versionTag.replace('v', ''), 10);
+    const clone: AgentConfig = {
+      ...original,
+      id: `config_${Date.now()}` as ID,
+      name: `${original.name} (Copy)`,
+      versionTag: `v${versionNum + 1}`,
+      status: AgentStatus.Draft,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      publishedAt: undefined,
+      clonedFromId: original.id,
+    };
+    
+    set((state) => ({
+      agentConfigs: [...state.agentConfigs, clone],
+    }));
+    
+    return clone;
+  },
   
   getInstructionCount: () => {
     const state = get();

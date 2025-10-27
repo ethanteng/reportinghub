@@ -1,5 +1,5 @@
 import {
-  AgentConfig, AnalyzerRun, AnalyzerStatus, Column, DataSource, DataSourceType,
+  AgentConfig, AgentStatus, AnalyzerRun, AnalyzerStatus, Column, DataSource, DataSourceType,
   Instruction, InstructionScope, ReadinessSeverity, SemanticModel, SyncStatus, Table, ID
 } from "./types";
 
@@ -192,18 +192,46 @@ export const lastAnalyzerRun: AnalyzerRun = {
 };
 
 // ---- Agent Configs (versioned) ----
+const now = new Date();
+const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
 export const agentConfigs: AgentConfig[] = [
   {
     id: id(),
     name: "Sales Assistant",
     modelId: salesModel.id,
-    versionTag: "v1",
-    createdAt: new Date().toISOString(),
+    versionTag: "v2",
+    status: AgentStatus.Live,
+    createdAt: lastWeek.toISOString(),
+    updatedAt: yesterday.toISOString(),
+    publishedAt: yesterday.toISOString(),
     instructionIds: [
       ...(salesModel.instructions ?? []).map(i => i.id),
       salesFastFacts.id,
       marginPctNote.id,
     ],
     sourceIds: [dataSources[0].id, dataSources[1].id, dataSources[2].id],
+  },
+  {
+    id: id(),
+    name: "Warehouse Inventory Bot",
+    modelId: warehouseModel.id,
+    versionTag: "v1",
+    status: AgentStatus.Draft,
+    createdAt: yesterday.toISOString(),
+    updatedAt: now.toISOString(),
+    instructionIds: [],
+    sourceIds: [dataSources[1].id],
+  },
+  {
+    id: id(),
+    name: "Documentation Assistant",
+    modelId: docsModel.id,
+    versionTag: "v1",
+    status: AgentStatus.Draft,
+    createdAt: now.toISOString(),
+    instructionIds: [],
+    sourceIds: [dataSources[2].id],
   },
 ];

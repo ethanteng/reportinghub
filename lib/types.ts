@@ -108,13 +108,22 @@ export interface AnalyzerFinding {
   recommendation: string;
 }
 
-// Versioned agent config (what the user will “publish”)
+export enum AgentStatus {
+  Draft = 'draft',
+  Live = 'live',
+  Archived = 'archived',
+}
+
+// Versioned agent config (what the user will "publish")
 export interface AgentConfig {
   id: ID;
   name: string;
   modelId: ID;
   versionTag: string;    // v1, v2, etc.
+  status: AgentStatus;
   createdAt: string;
+  updatedAt?: string;
+  publishedAt?: string;
   clonedFromId?: ID;
   // denormalized snapshot for portability
   instructionIds: ID[];

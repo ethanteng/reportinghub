@@ -8,8 +8,10 @@ import {
   CheckCircle2,
   Rocket,
   LucideIcon,
+  ChevronLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface Step {
   id: string;
@@ -50,6 +52,13 @@ export function StepRail() {
 
   return (
     <nav className="flex flex-col gap-1 p-4 bg-muted/30 border-r min-h-screen w-56">
+      <Link href="/agents" className="mb-4">
+        <Button variant="ghost" size="sm" className="w-full justify-start">
+          <ChevronLeft className="h-4 w-4 mr-2" />
+          All Agents
+        </Button>
+      </Link>
+
       <div className="mb-6 px-2">
         <h2 className="text-lg font-semibold">BI Genius Studio</h2>
         <p className="text-xs text-muted-foreground mt-1">Agent Configuration</p>
