@@ -95,7 +95,10 @@ function InspectorPanelContent() {
       )}
 
           {/* Content */}
-          <Tabs defaultValue="instructions" className="flex-1 flex flex-col overflow-hidden">
+          <Tabs 
+            defaultValue={selectedEntity.type === 'source' ? 'summary' : 'instructions'} 
+            className="flex-1 flex flex-col overflow-hidden"
+          >
             <TabsList className="mx-4 mt-2">
               <TabsTrigger value="summary" className="text-xs">
                 Summary
