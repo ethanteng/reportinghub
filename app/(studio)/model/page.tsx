@@ -4,16 +4,15 @@ import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { MultiModelTreeView } from '@/components/studio/MultiModelTreeView';
-import { Breadcrumbs } from '@/components/studio/Breadcrumbs';
 import { EmptyState } from '@/components/studio/EmptyState';
 import { AgentChatWidget } from '@/components/studio/AgentChatWidget';
 import { useBiGeniusStore } from '@/store/useBiGeniusStore';
-import { Database, Server, FileText, Globe, Network, Play } from 'lucide-react';
+import { Database, Server, FileText, Globe, Network, Play, Edit3, Check, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { DataSourceType } from '../../../lib/types';
+import { toast } from 'sonner';
 
 const iconMap = {
   [DataSourceType.PowerBI]: Database,
@@ -24,17 +23,41 @@ const iconMap = {
 
 function ModelPageContent() {
   const searchParams = useSearchParams();
-  const { models, selectedEntity, dataSources, setSelectedEntity, getCurrentAgent } = useBiGeniusStore();
+  const { models, selectedEntity, dataSources, setSelectedEntity, getCurrentAgent, updateAgentConfig } = useBiGeniusStore();
   const [filterWithInstructions, setFilterWithInstructions] = useState(false);
   const [initialExpandedModels, setInitialExpandedModels] = useState<Set<string>>();
   const [initialExpandedTables, setInitialExpandedTables] = useState<Set<string>>();
   const [showTestChat, setShowTestChat] = useState(false);
+  const [editingInstructions, setEditingInstructions] = useState(false);
+  const [instructionsText, setInstructionsText] = useState('');
   
   // Get the current agent config to see which sources are connected
   const currentAgent = getCurrentAgent();
   const connectedSources = dataSources.filter((ds) => 
     currentAgent?.sourceIds.includes(ds.id)
   );
+
+  // Initialize instructions text when agent loads
+  useEffect(() => {
+    if (currentAgent) {
+      setInstructionsText(currentAgent.customInstructions || '');
+    }
+  }, [currentAgent]);
+
+  const handleSaveInstructions = () => {
+    if (currentAgent) {
+      updateAgentConfig(currentAgent.id, {
+        customInstructions: instructionsText.trim() || undefined,
+      });
+      setEditingInstructions(false);
+      toast.success('Agent instructions updated');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setInstructionsText(currentAgent?.customInstructions || '');
+    setEditingInstructions(false);
+  };
 
   // Handle navigation from findings - expand tree and select entity
   useEffect(() => {
@@ -119,8 +142,8 @@ function ModelPageContent() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="border-b bg-background sticky top-0 z-10">
-        <div className="px-6 py-4">
+      <div className="border-b bg-blue-50/50 sticky top-0 z-10">
+        <div className="px-6 py-4 bg-background border-b">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-2xl font-semibold">Semantic Models & Instructions</h1>
@@ -137,6 +160,62 @@ function ModelPageContent() {
           </div>
         </div>
         
+        {/* Agent-Level Custom Instructions */}
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs font-medium text-muted-foreground">
+              Agent Instructions & Context
+            </div>
+            {!editingInstructions && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditingInstructions(true)}
+                className="h-7 text-xs"
+              >
+                <Edit3 className="h-3 w-3 mr-1" />
+                Edit
+              </Button>
+            )}
+          </div>
+          
+          {editingInstructions ? (
+            <div className="space-y-2">
+              <Textarea
+                value={instructionsText}
+                onChange={(e) => setInstructionsText(e.target.value)}
+                placeholder="Add custom instructions or context for this AI agent. These instructions will guide how the agent responds across all data sources and models..."
+                className="text-sm min-h-[100px] bg-background"
+              />
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCancelEdit}
+                  className="text-xs"
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSaveInstructions}
+                  className="text-xs"
+                >
+                  <Check className="h-3 w-3 mr-1" />
+                  Save
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground bg-background rounded p-3 border">
+              {instructionsText || (
+                <span className="italic">No agent instructions set. Click Edit to add guidance for this AI agent.</span>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Connected Data Sources */}
         {connectedSources.length > 0 && (
           <div className="px-6 pb-4">
@@ -156,22 +235,6 @@ function ModelPageContent() {
             </div>
           </div>
         )}
-
-        {/* Instruction Filter */}
-        <div className="px-6 pb-4">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="filter-instructions"
-              checked={filterWithInstructions}
-              onCheckedChange={(checked) => setFilterWithInstructions(checked as boolean)}
-            />
-            <Label htmlFor="filter-instructions" className="text-sm cursor-pointer">
-              Show only items with instructions
-            </Label>
-          </div>
-        </div>
-        
-        <Breadcrumbs selectedEntity={selectedEntity} />
       </div>
 
       {/* Content */}
@@ -181,6 +244,7 @@ function ModelPageContent() {
           models={models}
           showInstructionBadges={true}
           filterWithInstructions={filterWithInstructions}
+          onFilterChange={setFilterWithInstructions}
           initialExpandedModels={initialExpandedModels}
           initialExpandedTables={initialExpandedTables}
         />

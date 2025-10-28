@@ -171,6 +171,16 @@ export default function PublishPage() {
               />
             </div>
 
+            {/* Agent Instructions & Context */}
+            {currentAgent?.customInstructions && (
+              <div className="bg-muted/30 rounded-lg border p-6 mb-6">
+                <h3 className="font-semibold mb-3">Agent Instructions & Context</h3>
+                <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {currentAgent.customInstructions}
+                </div>
+              </div>
+            )}
+
             {/* Instructions Breakdown */}
             {instructionCount > 0 && (
               <div className="bg-muted rounded-lg p-6">

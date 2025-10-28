@@ -446,6 +446,7 @@ export const agentConfigs: AgentConfig[] = [
       "Who are my best performing Sales Rep?",
       "Show me monthly revenue trends for this year"
     ],
+    customInstructions: "You are a sales analytics expert. Always provide insights in a business-friendly tone. When analyzing sales data, focus on actionable recommendations and highlight trends that matter to sales leadership. Format currency values in USD and percentages with 2 decimal places.",
     modelId: salesModel.id,
     versionTag: "v2",
     status: AgentStatus.Live,
@@ -467,6 +468,7 @@ export const agentConfigs: AgentConfig[] = [
       "What products are low in stock?",
       "Show me inventory by location"
     ],
+    customInstructions: "You are an inventory management specialist. Always alert users to items that are below reorder levels. When providing inventory data, organize by location and highlight any critical stock situations. Use clear, concise language suitable for warehouse operations.",
     modelId: warehouseModel.id,
     versionTag: "v1",
     status: AgentStatus.Draft,
@@ -489,6 +491,7 @@ export const agentConfigs: AgentConfig[] = [
       "What's new in the latest version?",
       "Where can I find troubleshooting guides?"
     ],
+    customInstructions: "You are a helpful documentation assistant. Always provide step-by-step instructions when explaining how to do something. Include relevant links to full documentation when available. Keep answers concise but comprehensive, and use a friendly, approachable tone.",
     modelId: docsModel.id,
     versionTag: "v1",
     status: AgentStatus.Draft,

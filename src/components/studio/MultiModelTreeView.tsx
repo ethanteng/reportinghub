@@ -4,6 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronDown, Database, Table2, Columns, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Breadcrumbs } from './Breadcrumbs';
 import { cn } from '@/lib/utils';
 import { SemanticModel, Table, Column } from '../../../lib/types';
 import { useBiGeniusStore } from '@/store/useBiGeniusStore';
@@ -12,6 +15,7 @@ interface MultiModelTreeViewProps {
   models: SemanticModel[];
   showInstructionBadges?: boolean;
   filterWithInstructions?: boolean;
+  onFilterChange?: (checked: boolean) => void;
   initialExpandedModels?: Set<string>;
   initialExpandedTables?: Set<string>;
 }
@@ -20,6 +24,7 @@ export function MultiModelTreeView({
   models,
   showInstructionBadges,
   filterWithInstructions,
+  onFilterChange,
   initialExpandedModels,
   initialExpandedTables,
 }: MultiModelTreeViewProps) {
@@ -139,22 +144,37 @@ export function MultiModelTreeView({
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="p-4 border-b space-y-3">
-        <Input
-          placeholder="Search tables and columns... (⌘K)"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="h-9"
-          aria-label="Search model structure"
-        />
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={expandAll} aria-label="Expand all models and tables">
-            Expand All
-          </Button>
-          <Button variant="outline" size="sm" onClick={collapseAll} aria-label="Collapse all models and tables">
-            Collapse All
-          </Button>
+      <div className="border-b">
+        <div className="p-4 space-y-3">
+          <Input
+            placeholder="Search tables and columns... (⌘K)"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-9"
+            aria-label="Search model structure"
+          />
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={expandAll} aria-label="Expand all models and tables">
+                Expand All
+              </Button>
+              <Button variant="outline" size="sm" onClick={collapseAll} aria-label="Collapse all models and tables">
+                Collapse All
+              </Button>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="filter-instructions"
+                checked={filterWithInstructions}
+                onCheckedChange={(checked) => onFilterChange?.(checked as boolean)}
+              />
+              <Label htmlFor="filter-instructions" className="text-sm cursor-pointer">
+                Show only items with instructions
+              </Label>
+            </div>
+          </div>
         </div>
+        <Breadcrumbs selectedEntity={selectedEntity} />
       </div>
 
       {/* Tree */}
