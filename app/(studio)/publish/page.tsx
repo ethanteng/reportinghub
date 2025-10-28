@@ -36,7 +36,14 @@ export default function PublishPage() {
   const connectedSources = dataSources.filter((ds) => 
     currentAgent?.sourceIds.includes(ds.id)
   );
-  const model = models.find((m) => m.id === currentAgent?.modelId) || models[0];
+  
+  // Filter models to only show those from connected sources
+  const connectedSourceIds = connectedSources.map(ds => ds.id);
+  const connectedModels = models.filter(model => 
+    connectedSourceIds.includes(model.sourceId)
+  );
+  
+  const model = connectedModels.find((m) => m.id === currentAgent?.modelId) || connectedModels[0];
   const analyzerRun = getAnalyzerRunForModel(model?.id);
   const readinessScore = analyzerRun?.summary?.readinessScore || 0;
   const instructionCount = getInstructionCount();
@@ -169,7 +176,7 @@ export default function PublishPage() {
               <SummaryCard
                 icon={Database}
                 label="Data Sources"
-                value={models.length}
+                value={connectedModels.length}
               />
             </div>
 
@@ -194,7 +201,7 @@ export default function PublishPage() {
                   </span>
                 </div>
                 <div className="space-y-6">
-                  {models.map((model) => {
+                  {connectedModels.map((model) => {
                     const dataSource = dataSources.find((ds) => ds.id === model.sourceId);
                     const modelInstructions = model.instructions || [];
                     const tablesWithInstructions = model.tables.filter(

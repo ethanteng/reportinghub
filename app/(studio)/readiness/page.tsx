@@ -23,7 +23,14 @@ export default function ReadinessPage() {
   const connectedSources = dataSources.filter((ds) => 
     currentAgent?.sourceIds.includes(ds.id)
   );
-  const model = models.find((m) => m.id === currentAgent?.modelId) || models[0];
+  
+  // Filter models to only show those from connected sources
+  const connectedSourceIds = connectedSources.map(ds => ds.id);
+  const connectedModels = models.filter(model => 
+    connectedSourceIds.includes(model.sourceId)
+  );
+  
+  const model = connectedModels.find((m) => m.id === currentAgent?.modelId) || connectedModels[0];
   const analyzerRun = getAnalyzerRunForModel(model?.id);
 
   const handleRunAnalysis = async () => {

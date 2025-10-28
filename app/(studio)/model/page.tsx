@@ -36,6 +36,12 @@ function ModelPageContent() {
   const connectedSources = dataSources.filter((ds) => 
     currentAgent?.sourceIds.includes(ds.id)
   );
+  
+  // Filter models to only show those from connected sources
+  const connectedSourceIds = connectedSources.map(ds => ds.id);
+  const connectedModels = models.filter(model => 
+    connectedSourceIds.includes(model.sourceId)
+  );
 
   // Initialize instructions text when agent loads
   useEffect(() => {
@@ -72,13 +78,13 @@ function ModelPageContent() {
 
       if (entityType === 'model') {
         expandedModels.add(entityId);
-        const model = models.find((m) => m.id === entityId);
+        const model = connectedModels.find((m) => m.id === entityId);
         if (model) {
           setSelectedEntity({ type: 'model', data: model });
         }
       } else if (entityType === 'table' && modelId) {
         expandedModels.add(modelId);
-        const model = models.find((m) => m.id === modelId);
+        const model = connectedModels.find((m) => m.id === modelId);
         const table = model?.tables.find((t) => t.id === entityId);
         if (table && model) {
           setSelectedEntity({ type: 'table', data: table, modelId: model.id });
@@ -86,7 +92,7 @@ function ModelPageContent() {
       } else if (entityType === 'column' && modelId && tableId) {
         expandedModels.add(modelId);
         expandedTables.add(tableId);
-        const model = models.find((m) => m.id === modelId);
+        const model = connectedModels.find((m) => m.id === modelId);
         const table = model?.tables.find((t) => t.id === tableId);
         const column = table?.columns.find((c) => c.id === entityId);
         if (column && table && model) {
@@ -103,7 +109,7 @@ function ModelPageContent() {
       setInitialExpandedModels(expandedModels);
       setInitialExpandedTables(expandedTables);
     }
-  }, [searchParams, models, setSelectedEntity]);
+  }, [searchParams, connectedModels, setSelectedEntity]);
 
   // Create a key that changes when URL params change to force tree re-mount
   const treeKey = searchParams.toString();
@@ -241,7 +247,7 @@ function ModelPageContent() {
       <div className="flex-1 overflow-hidden">
         <MultiModelTreeView
           key={treeKey}
-          models={models}
+          models={connectedModels}
           showInstructionBadges={true}
           filterWithInstructions={filterWithInstructions}
           onFilterChange={setFilterWithInstructions}
