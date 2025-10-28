@@ -20,6 +20,8 @@ import {
   Table2,
   Columns,
   Play,
+  FileText,
+  Tag,
 } from 'lucide-react';
 import { AgentConfig, AgentStatus } from '../../../lib/types';
 
@@ -197,14 +199,28 @@ export default function PublishPage() {
                     const modelInstructions = model.instructions || [];
                     const tablesWithInstructions = model.tables.filter(
                       (t) => (t.instructions && t.instructions.length > 0) || 
-                             t.columns.some((c) => c.instructions && c.instructions.length > 0)
+                             t.description ||
+                             (t.synonyms && t.synonyms.length > 0) ||
+                             t.columns.some((c) => 
+                               (c.instructions && c.instructions.length > 0) ||
+                               c.description ||
+                               (c.synonyms && c.synonyms.length > 0)
+                             )
                     );
                     
                     const totalInstructions = modelInstructions.length + 
                       model.tables.reduce((sum, t) => sum + (t.instructions?.length || 0), 0) +
                       model.tables.reduce((sum, t) => sum + t.columns.reduce((cSum, c) => cSum + (c.instructions?.length || 0), 0), 0);
                     
-                    if (totalInstructions === 0) return null;
+                    const hasDescriptionsOrSynonyms = model.description || 
+                      (model.synonyms && model.synonyms.length > 0) ||
+                      model.tables.some((t) => 
+                        t.description || 
+                        (t.synonyms && t.synonyms.length > 0) ||
+                        t.columns.some((c) => c.description || (c.synonyms && c.synonyms.length > 0))
+                      );
+                    
+                    if (totalInstructions === 0 && !hasDescriptionsOrSynonyms) return null;
 
                     return (
                       <div key={model.id} className="space-y-2">
@@ -227,15 +243,43 @@ export default function PublishPage() {
 
                         <div className="space-y-2 bg-background rounded-lg border p-4">
                           {/* Model-level instructions */}
-                          {modelInstructions.length > 0 && (
+                          {(modelInstructions.length > 0 || model.description || model.synonyms) && (
                             <div className="space-y-2">
                               <div className="flex items-center gap-2">
                                 <Network className="h-4 w-4 text-blue-600" />
                                 <span className="text-sm font-medium">{model.name}</span>
-                                {modelInstructions.length > 0 && (
+                                {(modelInstructions.length > 0 || model.description || model.synonyms) && (
                                   <Brain className="h-3 w-3 text-blue-600" />
                                 )}
                               </div>
+                              
+                              {/* Description */}
+                              {model.description && (
+                                <div className="ml-6 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                                  <div className="flex items-start gap-2">
+                                    <FileText className="h-3 w-3 text-blue-600 mt-0.5 flex-shrink-0" />
+                                    <div>
+                                      <span className="font-semibold">Description: </span>
+                                      {model.description}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Synonyms */}
+                              {model.synonyms && model.synonyms.length > 0 && (
+                                <div className="ml-6 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                                  <div className="flex items-start gap-2">
+                                    <Tag className="h-3 w-3 text-blue-600 mt-0.5 flex-shrink-0" />
+                                    <div>
+                                      <span className="font-semibold">Synonyms: </span>
+                                      {model.synonyms.join(', ')}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Regular instructions */}
                               {modelInstructions.map((instruction) => (
                                 <div key={instruction.id} className="ml-6 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
                                   {instruction.content}
@@ -248,7 +292,9 @@ export default function PublishPage() {
                           {tablesWithInstructions.map((table) => {
                             const tableInstructions = table.instructions || [];
                             const columnsWithInstructions = table.columns.filter(
-                              (c) => c.instructions && c.instructions.length > 0
+                              (c) => (c.instructions && c.instructions.length > 0) ||
+                                     c.description ||
+                                     (c.synonyms && c.synonyms.length > 0)
                             );
 
                             return (
@@ -258,10 +304,38 @@ export default function PublishPage() {
                                   <div className="flex items-center gap-2">
                                     <Table2 className="h-4 w-4 text-purple-600" />
                                     <span className="text-sm font-medium">{table.name}</span>
-                                    {tableInstructions.length > 0 && (
+                                    {(tableInstructions.length > 0 || table.description || table.synonyms) && (
                                       <Brain className="h-3 w-3 text-purple-600" />
                                     )}
                                   </div>
+                                  
+                                  {/* Description */}
+                                  {table.description && (
+                                    <div className="ml-6 p-2 bg-purple-50 border border-purple-200 rounded text-xs">
+                                      <div className="flex items-start gap-2">
+                                        <FileText className="h-3 w-3 text-purple-600 mt-0.5 flex-shrink-0" />
+                                        <div>
+                                          <span className="font-semibold">Description: </span>
+                                          {table.description}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Synonyms */}
+                                  {table.synonyms && table.synonyms.length > 0 && (
+                                    <div className="ml-6 p-2 bg-purple-50 border border-purple-200 rounded text-xs">
+                                      <div className="flex items-start gap-2">
+                                        <Tag className="h-3 w-3 text-purple-600 mt-0.5 flex-shrink-0" />
+                                        <div>
+                                          <span className="font-semibold">Synonyms: </span>
+                                          {table.synonyms.join(', ')}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Regular instructions */}
                                   {tableInstructions.map((instruction) => (
                                     <div key={instruction.id} className="ml-6 p-2 bg-purple-50 border border-purple-200 rounded text-xs">
                                       {instruction.content}
@@ -277,10 +351,38 @@ export default function PublishPage() {
                                       <div className="flex items-center gap-2">
                                         <Columns className="h-4 w-4 text-green-600" />
                                         <span className="text-sm font-medium">{column.name}</span>
-                                        {columnInstructions.length > 0 && (
+                                        {(columnInstructions.length > 0 || column.description || column.synonyms) && (
                                           <Brain className="h-3 w-3 text-green-600" />
                                         )}
                                       </div>
+                                      
+                                      {/* Description */}
+                                      {column.description && (
+                                        <div className="ml-6 p-2 bg-green-50 border border-green-200 rounded text-xs">
+                                          <div className="flex items-start gap-2">
+                                            <FileText className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                                            <div>
+                                              <span className="font-semibold">Description: </span>
+                                              {column.description}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Synonyms */}
+                                      {column.synonyms && column.synonyms.length > 0 && (
+                                        <div className="ml-6 p-2 bg-green-50 border border-green-200 rounded text-xs">
+                                          <div className="flex items-start gap-2">
+                                            <Tag className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                                            <div>
+                                              <span className="font-semibold">Synonyms: </span>
+                                              {column.synonyms.join(', ')}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Regular instructions */}
                                       {columnInstructions.map((instruction) => (
                                         <div key={instruction.id} className="ml-6 p-2 bg-green-50 border border-green-200 rounded text-xs">
                                           {instruction.content}

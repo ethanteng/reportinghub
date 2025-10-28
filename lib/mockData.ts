@@ -49,6 +49,16 @@ const salesTable = t("Sales", [
   c("MarginPct", "number"),
 ]);
 
+// Add descriptions and synonyms to Sales table columns
+salesTable.description = "Contains all sales transactions and order data for revenue analysis";
+salesTable.synonyms = ["Orders", "Transactions", "Sales Data"];
+salesTable.columns[0].description = "Unique identifier for each sales order";
+salesTable.columns[0].synonyms = ["Order Number", "Transaction ID"];
+salesTable.columns[4].description = "Total revenue generated from the sale in USD";
+salesTable.columns[4].synonyms = ["Sales Amount", "Total Sales", "Income"];
+salesTable.columns[6].description = "Profit margin percentage calculated as (Revenue - Cost) / Revenue";
+salesTable.synonyms = ["Margin Percent", "Profit Margin", "Gross Margin"];
+
 const customersTable = t("Customers", [
   c("CustomerId", "number"),
   c("CustomerName", "string"),
@@ -56,12 +66,20 @@ const customersTable = t("Customers", [
   c("Country", "string"),
 ]);
 
+// Add descriptions and synonyms to Customers table
+customersTable.description = "Master list of all customers with demographic and segmentation data";
+customersTable.synonyms = ["Clients", "Accounts", "Customer Master"];
+customersTable.columns[2].description = "Customer segmentation category (Enterprise, SMB, Individual)";
+customersTable.columns[2].synonyms = ["Customer Type", "Segment", "Category"];
+
 const salesModel: SemanticModel = {
   id: id(),
   sourceId: dataSources[0].id,
   name: "Contoso Sales Model",
   versionTag: "v1",
   tables: [salesTable, customersTable],
+  description: "Primary sales analytics model containing order and customer data for business intelligence",
+  synonyms: ["Sales Analytics", "Revenue Model", "Sales DB"],
   instructions: [
     {
       id: id(),
@@ -88,6 +106,14 @@ const inventoryTable = t("Inventory", [
   c("LastStockCheck", "date"),
 ]);
 
+// Add descriptions and synonyms to Inventory table
+inventoryTable.description = "Real-time inventory levels and stock information for all products across warehouse locations";
+inventoryTable.synonyms = ["Stock", "Warehouse Stock", "Product Inventory"];
+inventoryTable.columns[4].description = "Current quantity of product available in warehouse";
+inventoryTable.columns[4].synonyms = ["Stock Level", "Available Quantity", "On Hand"];
+inventoryTable.columns[5].description = "Minimum stock level that triggers a reorder";
+inventoryTable.columns[5].synonyms = ["Min Stock", "Reorder Point", "Safety Stock"];
+
 const ordersTable = t("Orders", [
   c("OrderId", "number"),
   c("OrderDate", "date"),
@@ -97,6 +123,9 @@ const ordersTable = t("Orders", [
   c("ShippingMethod", "string"),
   c("EstimatedDelivery", "date"),
 ]);
+
+ordersTable.description = "Order fulfillment tracking and order management data";
+ordersTable.synonyms = ["Purchase Orders", "Order Management"];
 
 const shipmentsTable = t("Shipments", [
   c("ShipmentId", "number"),
@@ -108,12 +137,18 @@ const shipmentsTable = t("Shipments", [
   c("Status", "string"),
 ]);
 
+shipmentsTable.description = "Shipment tracking and delivery information";
+shipmentsTable.columns[2].description = "Carrier-provided tracking number for package tracking";
+shipmentsTable.columns[2].synonyms = ["Tracking Code", "Package Number", "Waybill"];
+
 const warehouseModel: SemanticModel = {
   id: id(),
   sourceId: dataSources[1].id,
   name: "Warehouse Data Model",
   versionTag: "v1",
   tables: [inventoryTable, ordersTable, shipmentsTable],
+  description: "Operational data model for warehouse management, inventory tracking, and order fulfillment",
+  synonyms: ["Warehouse DB", "Inventory System", "Fulfillment Model"],
   instructions: [
     {
       id: id(),
@@ -516,6 +551,26 @@ const hoursAgo = (hours: number) => new Date(Date.now() - hours * 60 * 60 * 1000
 export const mockInstructionHistory: InstructionHistory[] = [
   // === Sales Model History ===
   
+  // Sales Model - Description and synonyms added
+  {
+    id: id(),
+    instructionId: `desc_${salesModel.id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Description: ${salesModel.description}`,
+    timestamp: daysAgo(15),
+    targetId: salesModel.id,
+    scope: InstructionScope.Model,
+  },
+  {
+    id: id(),
+    instructionId: `syn_${salesModel.id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Synonyms: ${salesModel.synonyms?.join(', ')}`,
+    timestamp: daysAgo(15),
+    targetId: salesModel.id,
+    scope: InstructionScope.Model,
+  },
+  
   // Sales Model - Model-level instruction evolution
   {
     id: id(),
@@ -547,6 +602,26 @@ export const mockInstructionHistory: InstructionHistory[] = [
     scope: InstructionScope.Model,
   },
   
+  // Sales Table - Description and synonyms
+  {
+    id: id(),
+    instructionId: `desc_${salesTable.id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Description: ${salesTable.description}`,
+    timestamp: daysAgo(13),
+    targetId: salesTable.id,
+    scope: InstructionScope.Table,
+  },
+  {
+    id: id(),
+    instructionId: `syn_${salesTable.id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Synonyms: ${salesTable.synonyms?.join(', ')}`,
+    timestamp: daysAgo(13),
+    targetId: salesTable.id,
+    scope: InstructionScope.Table,
+  },
+  
   // Sales Table - KPI instruction
   {
     id: id(),
@@ -566,6 +641,57 @@ export const mockInstructionHistory: InstructionHistory[] = [
     timestamp: daysAgo(8),
     targetId: salesTable.id,
     scope: InstructionScope.Table,
+  },
+  
+  // Revenue Column - Description and synonyms
+  {
+    id: id(),
+    instructionId: `desc_${salesTable.columns[4].id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Description: ${salesTable.columns[4].description}`,
+    timestamp: daysAgo(11),
+    targetId: salesTable.columns.find(c => c.name === "Revenue")!.id,
+    scope: InstructionScope.Column,
+  },
+  {
+    id: id(),
+    instructionId: `syn_${salesTable.columns[4].id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Synonyms: ${salesTable.columns[4].synonyms?.join(', ')}`,
+    timestamp: daysAgo(11),
+    targetId: salesTable.columns.find(c => c.name === "Revenue")!.id,
+    scope: InstructionScope.Column,
+  },
+  
+  // OrderId Column - Description and synonyms
+  {
+    id: id(),
+    instructionId: `desc_${salesTable.columns[0].id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Description: ${salesTable.columns[0].description}`,
+    timestamp: daysAgo(10),
+    targetId: salesTable.columns.find(c => c.name === "OrderId")!.id,
+    scope: InstructionScope.Column,
+  },
+  {
+    id: id(),
+    instructionId: `syn_${salesTable.columns[0].id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Synonyms: ${salesTable.columns[0].synonyms?.join(', ')}`,
+    timestamp: daysAgo(10),
+    targetId: salesTable.columns.find(c => c.name === "OrderId")!.id,
+    scope: InstructionScope.Column,
+  },
+  
+  // MarginPct Column - Description first
+  {
+    id: id(),
+    instructionId: `desc_${salesTable.columns[6].id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Description: ${salesTable.columns[6].description}`,
+    timestamp: daysAgo(9),
+    targetId: salesTable.columns.find(c => c.name === "MarginPct")!.id,
+    scope: InstructionScope.Column,
   },
   
   // MarginPct Column
@@ -609,7 +735,67 @@ export const mockInstructionHistory: InstructionHistory[] = [
     scope: InstructionScope.Column,
   },
   
+  // Customers Table - Description and synonyms
+  {
+    id: id(),
+    instructionId: `desc_${customersTable.id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Description: ${customersTable.description}`,
+    timestamp: daysAgo(12),
+    targetId: customersTable.id,
+    scope: InstructionScope.Table,
+  },
+  {
+    id: id(),
+    instructionId: `syn_${customersTable.id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Synonyms: ${customersTable.synonyms?.join(', ')}`,
+    timestamp: daysAgo(12),
+    targetId: customersTable.id,
+    scope: InstructionScope.Table,
+  },
+  
+  // Customers Segment Column - Description and synonyms
+  {
+    id: id(),
+    instructionId: `desc_${customersTable.columns[2].id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Description: ${customersTable.columns[2].description}`,
+    timestamp: daysAgo(10),
+    targetId: customersTable.columns.find(c => c.name === "Segment")!.id,
+    scope: InstructionScope.Column,
+  },
+  {
+    id: id(),
+    instructionId: `syn_${customersTable.columns[2].id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Synonyms: ${customersTable.columns[2].synonyms?.join(', ')}`,
+    timestamp: daysAgo(10),
+    targetId: customersTable.columns.find(c => c.name === "Segment")!.id,
+    scope: InstructionScope.Column,
+  },
+  
   // === Warehouse Model History ===
+  
+  // Warehouse Model - Description and synonyms
+  {
+    id: id(),
+    instructionId: `desc_${warehouseModel.id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Description: ${warehouseModel.description}`,
+    timestamp: daysAgo(8),
+    targetId: warehouseModel.id,
+    scope: InstructionScope.Model,
+  },
+  {
+    id: id(),
+    instructionId: `syn_${warehouseModel.id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Synonyms: ${warehouseModel.synonyms?.join(', ')}`,
+    timestamp: daysAgo(8),
+    targetId: warehouseModel.id,
+    scope: InstructionScope.Model,
+  },
   
   // Warehouse Model - Model-level
   {
@@ -632,6 +818,26 @@ export const mockInstructionHistory: InstructionHistory[] = [
     scope: InstructionScope.Model,
   },
   
+  // Inventory Table - Description and synonyms
+  {
+    id: id(),
+    instructionId: `desc_${inventoryTable.id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Description: ${inventoryTable.description}`,
+    timestamp: daysAgo(7),
+    targetId: inventoryTable.id,
+    scope: InstructionScope.Table,
+  },
+  {
+    id: id(),
+    instructionId: `syn_${inventoryTable.id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Synonyms: ${inventoryTable.synonyms?.join(', ')}`,
+    timestamp: daysAgo(7),
+    targetId: inventoryTable.id,
+    scope: InstructionScope.Table,
+  },
+  
   // Inventory Table
   {
     id: id(),
@@ -641,6 +847,47 @@ export const mockInstructionHistory: InstructionHistory[] = [
     timestamp: daysAgo(5),
     targetId: inventoryTable.id,
     scope: InstructionScope.Table,
+  },
+  
+  // QuantityOnHand Column - Description and synonyms
+  {
+    id: id(),
+    instructionId: `desc_${inventoryTable.columns[4].id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Description: ${inventoryTable.columns[4].description}`,
+    timestamp: daysAgo(6),
+    targetId: inventoryTable.columns.find(c => c.name === "QuantityOnHand")!.id,
+    scope: InstructionScope.Column,
+  },
+  {
+    id: id(),
+    instructionId: `syn_${inventoryTable.columns[4].id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Synonyms: ${inventoryTable.columns[4].synonyms?.join(', ')}`,
+    timestamp: daysAgo(6),
+    targetId: inventoryTable.columns.find(c => c.name === "QuantityOnHand")!.id,
+    scope: InstructionScope.Column,
+  },
+  
+  // ReorderLevel Column - Description and synonyms
+  {
+    id: id(),
+    instructionId: `desc_${inventoryTable.columns[5].id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Description: ${inventoryTable.columns[5].description}`,
+    timestamp: daysAgo(5),
+    targetId: inventoryTable.columns.find(c => c.name === "ReorderLevel")!.id,
+    scope: InstructionScope.Column,
+  },
+  {
+    id: id(),
+    instructionId: `syn_${inventoryTable.columns[5].id}` as ID,
+    changeType: InstructionChangeType.Edited,
+    content: `Synonyms: ${inventoryTable.columns[5].synonyms?.join(', ')}`,
+    previousContent: "Synonyms: Min Stock, Reorder Point",
+    timestamp: daysAgo(4),
+    targetId: inventoryTable.columns.find(c => c.name === "ReorderLevel")!.id,
+    scope: InstructionScope.Column,
   },
   
   // QuantityOnHand Column
@@ -661,6 +908,37 @@ export const mockInstructionHistory: InstructionHistory[] = [
     previousContent: "Compare with ReorderLevel to identify low stock.",
     timestamp: hoursAgo(48),
     targetId: inventoryTable.columns.find(c => c.name === "QuantityOnHand")!.id,
+    scope: InstructionScope.Column,
+  },
+  
+  // Shipments Table - Description
+  {
+    id: id(),
+    instructionId: `desc_${shipmentsTable.id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Description: ${shipmentsTable.description}`,
+    timestamp: hoursAgo(48),
+    targetId: shipmentsTable.id,
+    scope: InstructionScope.Table,
+  },
+  
+  // TrackingNumber Column - Description and synonyms
+  {
+    id: id(),
+    instructionId: `desc_${shipmentsTable.columns[2].id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Description: ${shipmentsTable.columns[2].description}`,
+    timestamp: hoursAgo(40),
+    targetId: shipmentsTable.columns.find(c => c.name === "TrackingNumber")!.id,
+    scope: InstructionScope.Column,
+  },
+  {
+    id: id(),
+    instructionId: `syn_${shipmentsTable.columns[2].id}` as ID,
+    changeType: InstructionChangeType.Added,
+    content: `Synonyms: ${shipmentsTable.columns[2].synonyms?.join(', ')}`,
+    timestamp: hoursAgo(40),
+    targetId: shipmentsTable.columns.find(c => c.name === "TrackingNumber")!.id,
     scope: InstructionScope.Column,
   },
   

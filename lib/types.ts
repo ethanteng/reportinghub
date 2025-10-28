@@ -53,6 +53,8 @@ export interface SemanticModel {
   versionTag: string;     // "v1", "v2"
   tables: Table[];
   instructions?: Instruction[]; // scope=model
+  description?: string;   // User-defined description
+  synonyms?: string[];    // Alternative names/terms for this model
 }
 
 export interface Table {
@@ -60,6 +62,8 @@ export interface Table {
   name: string;
   columns: Column[];
   instructions?: Instruction[]; // scope=table
+  description?: string;   // User-defined description
+  synonyms?: string[];    // Alternative names/terms for this table
 }
 
 export interface Column {
@@ -67,6 +71,8 @@ export interface Column {
   name: string;
   dataType: string;       // string | number | date | bool etc.
   instructions?: Instruction[]; // scope=column
+  description?: string;   // User-defined description
+  synonyms?: string[];    // Alternative names/terms for this column
 }
 
 export interface Instruction {

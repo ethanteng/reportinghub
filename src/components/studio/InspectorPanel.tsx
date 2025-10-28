@@ -1,14 +1,17 @@
 'use client';
 
-import { Suspense } from 'react';
-import { X, AlertCircle, AlertTriangle, Info } from 'lucide-react';
+import { Suspense, useState } from 'react';
+import { X, AlertCircle, AlertTriangle, Info, Edit3, Check, Plus, Trash2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { useBiGeniusStore, SelectedEntity } from '@/store/useBiGeniusStore';
 import { InstructionEditor } from './InstructionEditor';
 import { InstructionHistoryView } from './InstructionHistory';
 import { DataSource, Table, Column, ReadinessSeverity } from '../../../lib/types';
+import { toast } from 'sonner';
 
 function InspectorPanelContent() {
   const searchParams = useSearchParams();
@@ -138,6 +141,94 @@ function InspectorPanelContent() {
 }
 
 function SummaryTab({ entity }: { entity: NonNullable<SelectedEntity> }) {
+  const { models, setModels } = useBiGeniusStore();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editDescription, setEditDescription] = useState('');
+  const [editSynonyms, setEditSynonyms] = useState<string[]>([]);
+  const [newSynonym, setNewSynonym] = useState('');
+
+  // Initialize edit state when entity changes or editing mode starts
+  const startEditing = () => {
+    if (entity.type === 'model') {
+      setEditDescription(entity.data.description || '');
+      setEditSynonyms(entity.data.synonyms || []);
+    } else if (entity.type === 'table') {
+      setEditDescription(entity.data.description || '');
+      setEditSynonyms(entity.data.synonyms || []);
+    } else if (entity.type === 'column') {
+      setEditDescription(entity.data.description || '');
+      setEditSynonyms(entity.data.synonyms || []);
+    }
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setNewSynonym('');
+  };
+
+  const saveChanges = () => {
+    const updatedModels = models.map((m) => {
+      if (entity.type === 'model' && m.id === entity.data.id) {
+        return {
+          ...m,
+          description: editDescription.trim() || undefined,
+          synonyms: editSynonyms.length > 0 ? editSynonyms : undefined,
+        };
+      } else if (entity.type === 'table' && m.id === entity.modelId) {
+        return {
+          ...m,
+          tables: m.tables.map((t) =>
+            t.id === entity.data.id
+              ? {
+                  ...t,
+                  description: editDescription.trim() || undefined,
+                  synonyms: editSynonyms.length > 0 ? editSynonyms : undefined,
+                }
+              : t
+          ),
+        };
+      } else if (entity.type === 'column' && m.id === entity.modelId) {
+        return {
+          ...m,
+          tables: m.tables.map((t) =>
+            t.id === entity.tableId
+              ? {
+                  ...t,
+                  columns: t.columns.map((c) =>
+                    c.id === entity.data.id
+                      ? {
+                          ...c,
+                          description: editDescription.trim() || undefined,
+                          synonyms: editSynonyms.length > 0 ? editSynonyms : undefined,
+                        }
+                      : c
+                  ),
+                }
+              : t
+          ),
+        };
+      }
+      return m;
+    });
+
+    setModels(updatedModels);
+    setIsEditing(false);
+    setNewSynonym('');
+    toast.success('Description and synonyms updated');
+  };
+
+  const addSynonym = () => {
+    if (newSynonym.trim() && !editSynonyms.includes(newSynonym.trim())) {
+      setEditSynonyms([...editSynonyms, newSynonym.trim()]);
+      setNewSynonym('');
+    }
+  };
+
+  const removeSynonym = (synonym: string) => {
+    setEditSynonyms(editSynonyms.filter((s) => s !== synonym));
+  };
+
   if (entity.type === 'source') {
     const source = entity.data as DataSource;
     return (
@@ -194,6 +285,104 @@ function SummaryTab({ entity }: { entity: NonNullable<SelectedEntity> }) {
             {model.tables.reduce((sum, t) => sum + t.columns.length, 0)}
           </p>
         </div>
+
+        {/* Description & Synonyms Section */}
+        <div className="pt-4 border-t space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-semibold">Description & Synonyms</h4>
+            {!isEditing && (
+              <Button variant="ghost" size="sm" onClick={startEditing} className="h-7 text-xs">
+                <Edit3 className="h-3 w-3 mr-1" />
+                Edit
+              </Button>
+            )}
+          </div>
+
+          {isEditing ? (
+            <>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Description</label>
+                <Textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="Add a description to help the AI understand this model..."
+                  className="mt-1 text-sm min-h-[80px]"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Synonyms</label>
+                <div className="mt-1 space-y-2">
+                  {editSynonyms.map((synonym) => (
+                    <div key={synonym} className="flex items-center gap-2 bg-muted px-2 py-1 rounded">
+                      <span className="text-sm flex-1">{synonym}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => removeSynonym(synonym)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                  <div className="flex gap-2">
+                    <Input
+                      value={newSynonym}
+                      onChange={(e) => setNewSynonym(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addSynonym();
+                        }
+                      }}
+                      placeholder="Add synonym..."
+                      className="text-sm"
+                    />
+                    <Button size="sm" onClick={addSynonym} disabled={!newSynonym.trim()}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" size="sm" onClick={cancelEditing}>
+                  <X className="h-3 w-3 mr-1" />
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={saveChanges}>
+                  <Check className="h-3 w-3 mr-1" />
+                  Save
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Description</label>
+                <p className="text-sm mt-1 text-muted-foreground">
+                  {model.description || 'No description added'}
+                </p>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Synonyms</label>
+                {model.synonyms && model.synonyms.length > 0 ? (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {model.synonyms.map((synonym) => (
+                      <span key={synonym} className="text-xs bg-muted px-2 py-1 rounded">
+                        {synonym}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm mt-1 text-muted-foreground">No synonyms added</p>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     );
   }
@@ -221,6 +410,104 @@ function SummaryTab({ entity }: { entity: NonNullable<SelectedEntity> }) {
             ))}
           </div>
         </div>
+
+        {/* Description & Synonyms Section */}
+        <div className="pt-4 border-t space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-semibold">Description & Synonyms</h4>
+            {!isEditing && (
+              <Button variant="ghost" size="sm" onClick={startEditing} className="h-7 text-xs">
+                <Edit3 className="h-3 w-3 mr-1" />
+                Edit
+              </Button>
+            )}
+          </div>
+
+          {isEditing ? (
+            <>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Description</label>
+                <Textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="Add a description to help the AI understand this table..."
+                  className="mt-1 text-sm min-h-[80px]"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Synonyms</label>
+                <div className="mt-1 space-y-2">
+                  {editSynonyms.map((synonym) => (
+                    <div key={synonym} className="flex items-center gap-2 bg-muted px-2 py-1 rounded">
+                      <span className="text-sm flex-1">{synonym}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => removeSynonym(synonym)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                  <div className="flex gap-2">
+                    <Input
+                      value={newSynonym}
+                      onChange={(e) => setNewSynonym(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addSynonym();
+                        }
+                      }}
+                      placeholder="Add synonym..."
+                      className="text-sm"
+                    />
+                    <Button size="sm" onClick={addSynonym} disabled={!newSynonym.trim()}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" size="sm" onClick={cancelEditing}>
+                  <X className="h-3 w-3 mr-1" />
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={saveChanges}>
+                  <Check className="h-3 w-3 mr-1" />
+                  Save
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Description</label>
+                <p className="text-sm mt-1 text-muted-foreground">
+                  {table.description || 'No description added'}
+                </p>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Synonyms</label>
+                {table.synonyms && table.synonyms.length > 0 ? (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {table.synonyms.map((synonym) => (
+                      <span key={synonym} className="text-xs bg-muted px-2 py-1 rounded">
+                        {synonym}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm mt-1 text-muted-foreground">No synonyms added</p>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     );
   }
@@ -236,6 +523,104 @@ function SummaryTab({ entity }: { entity: NonNullable<SelectedEntity> }) {
         <div>
           <label className="text-xs font-medium text-muted-foreground">Data Type</label>
           <p className="text-sm mt-1 capitalize">{column.dataType}</p>
+        </div>
+
+        {/* Description & Synonyms Section */}
+        <div className="pt-4 border-t space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-semibold">Description & Synonyms</h4>
+            {!isEditing && (
+              <Button variant="ghost" size="sm" onClick={startEditing} className="h-7 text-xs">
+                <Edit3 className="h-3 w-3 mr-1" />
+                Edit
+              </Button>
+            )}
+          </div>
+
+          {isEditing ? (
+            <>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Description</label>
+                <Textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="Add a description to help the AI understand this column..."
+                  className="mt-1 text-sm min-h-[80px]"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Synonyms</label>
+                <div className="mt-1 space-y-2">
+                  {editSynonyms.map((synonym) => (
+                    <div key={synonym} className="flex items-center gap-2 bg-muted px-2 py-1 rounded">
+                      <span className="text-sm flex-1">{synonym}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => removeSynonym(synonym)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                  <div className="flex gap-2">
+                    <Input
+                      value={newSynonym}
+                      onChange={(e) => setNewSynonym(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addSynonym();
+                        }
+                      }}
+                      placeholder="Add synonym..."
+                      className="text-sm"
+                    />
+                    <Button size="sm" onClick={addSynonym} disabled={!newSynonym.trim()}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" size="sm" onClick={cancelEditing}>
+                  <X className="h-3 w-3 mr-1" />
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={saveChanges}>
+                  <Check className="h-3 w-3 mr-1" />
+                  Save
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Description</label>
+                <p className="text-sm mt-1 text-muted-foreground">
+                  {column.description || 'No description added'}
+                </p>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Synonyms</label>
+                {column.synonyms && column.synonyms.length > 0 ? (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {column.synonyms.map((synonym) => (
+                      <span key={synonym} className="text-xs bg-muted px-2 py-1 rounded">
+                        {synonym}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm mt-1 text-muted-foreground">No synonyms added</p>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
