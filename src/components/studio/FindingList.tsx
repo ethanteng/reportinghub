@@ -45,7 +45,7 @@ const severityConfig = {
 
 export function FindingList({ findings }: FindingListProps) {
   const router = useRouter();
-  const { models, dataSources, setSelectedEntity } = useBiGeniusStore();
+  const { models, dataSources } = useBiGeniusStore();
 
   const groupedFindings = {
     [ReadinessSeverity.Blocker]: findings.filter((f) => f.severity === ReadinessSeverity.Blocker),
@@ -133,25 +133,18 @@ export function FindingList({ findings }: FindingListProps) {
     const severity = encodeURIComponent(finding.severity);
 
     // Navigate to the entity in the model page with URL params for auto-expansion and recommendation
+    // The model page's useEffect will handle setting the selected entity based on URL params
     if (finding.entityType === 'model') {
-      setSelectedEntity({ type: 'model', data: targetModel });
       router.push(`/model?entityType=model&entityId=${finding.entityId}&recommendation=${recommendation}&findingTitle=${findingTitle}&severity=${severity}`);
     } else if (finding.entityType === 'table') {
       const table = targetModel.tables.find((t) => t.id === finding.entityId);
       if (table) {
-        setSelectedEntity({ type: 'table', data: table, modelId: targetModel.id });
         router.push(`/model?entityType=table&entityId=${finding.entityId}&modelId=${targetModel.id}&recommendation=${recommendation}&findingTitle=${findingTitle}&severity=${severity}`);
       }
     } else if (finding.entityType === 'column') {
       for (const table of targetModel.tables) {
         const column = table.columns.find((c) => c.id === finding.entityId);
         if (column) {
-          setSelectedEntity({
-            type: 'column',
-            data: column,
-            tableId: table.id,
-            modelId: targetModel.id,
-          });
           router.push(`/model?entityType=column&entityId=${finding.entityId}&tableId=${table.id}&modelId=${targetModel.id}&recommendation=${recommendation}&findingTitle=${findingTitle}&severity=${severity}`);
           break;
         }

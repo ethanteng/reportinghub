@@ -109,7 +109,8 @@ function ModelPageContent() {
       setInitialExpandedModels(expandedModels);
       setInitialExpandedTables(expandedTables);
     }
-  }, [searchParams, connectedModels, setSelectedEntity]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // Create a key that changes when URL params change to force tree re-mount
   const treeKey = searchParams.toString();
