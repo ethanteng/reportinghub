@@ -182,7 +182,7 @@ export function AgentChatWidget({ agent, onClose }: AgentChatWidgetProps) {
                 onKeyPress={handleKeyPress}
                 className="flex-1"
               />
-              <Button onClick={handleSend} size="icon">
+              <Button onClick={() => handleSend()} size="icon">
                 <Send className="h-4 w-4" />
               </Button>
             </div>
