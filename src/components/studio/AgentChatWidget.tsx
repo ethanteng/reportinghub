@@ -31,14 +31,15 @@ export function AgentChatWidget({ agent, onClose }: AgentChatWidgetProps) {
     },
   ]);
 
-  const handleSend = () => {
-    if (!inputValue.trim()) return;
+  const handleSend = (content?: string) => {
+    const messageContent = content || inputValue;
+    if (!messageContent.trim()) return;
 
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: inputValue,
+      content: messageContent,
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, userMessage]);
@@ -54,6 +55,10 @@ export function AgentChatWidget({ agent, onClose }: AgentChatWidgetProps) {
       };
       setMessages((prev) => [...prev, aiMessage]);
     }, 1000);
+  };
+
+  const handlePromptClick = (prompt: string) => {
+    handleSend(prompt);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -74,14 +79,16 @@ export function AgentChatWidget({ agent, onClose }: AgentChatWidgetProps) {
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-primary text-primary-foreground">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-          <div>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse flex-shrink-0" />
+          <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-sm">{agent.name}</h3>
-            <p className="text-xs opacity-80">{agent.versionTag}</p>
+            {agent.subheader && (
+              <p className="text-xs opacity-90 truncate">{agent.subheader}</p>
+            )}
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-shrink-0">
           <Button
             variant="ghost"
             size="icon"
@@ -143,6 +150,26 @@ export function AgentChatWidget({ agent, onClose }: AgentChatWidgetProps) {
                 </div>
               </div>
             ))}
+
+            {/* Suggested Prompts - Show only when no conversation yet */}
+            {messages.length === 1 && agent.suggestedPrompts && agent.suggestedPrompts.length > 0 && (
+              <div className="px-4 pb-2">
+                <p className="text-xs font-medium text-muted-foreground mb-2">
+                  What can I help with?
+                </p>
+                <div className="space-y-2">
+                  {agent.suggestedPrompts.map((prompt, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handlePromptClick(prompt)}
+                      className="w-full text-left px-3 py-2 text-sm border rounded-lg hover:bg-muted transition-colors"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Input */}

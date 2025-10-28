@@ -36,7 +36,9 @@ export default function AgentsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
+  const [newSubheader, setNewSubheader] = useState('');
   const [newAgentName, setNewAgentName] = useState('');
+  const [newAgentSubheader, setNewAgentSubheader] = useState('');
   const [testingAgentId, setTestingAgentId] = useState<string | null>(null);
 
   const selectedAgent = agentConfigs.find((a) => a.id === selectedAgentId);
@@ -59,17 +61,22 @@ export default function AgentsPage() {
     if (agent) {
       setSelectedAgentId(agentId);
       setNewName(agent.name);
+      setNewSubheader(agent.subheader || '');
       setShowRenameDialog(true);
     }
   };
 
   const handleRenameConfirm = () => {
     if (selectedAgentId && newName.trim()) {
-      updateAgentConfig(selectedAgentId, { name: newName.trim() });
-      toast.success('Agent renamed successfully');
+      updateAgentConfig(selectedAgentId, { 
+        name: newName.trim(),
+        subheader: newSubheader.trim() || undefined,
+      });
+      toast.success('Agent updated successfully');
       setShowRenameDialog(false);
       setSelectedAgentId(null);
       setNewName('');
+      setNewSubheader('');
     }
   };
 
@@ -95,8 +102,14 @@ export default function AgentsPage() {
     setTestingAgentId(agentId);
   };
 
+  const handleUpdatePrompts = (agentId: string, prompts: string[]) => {
+    updateAgentConfig(agentId, { suggestedPrompts: prompts });
+    toast.success('Suggested prompts updated');
+  };
+
   const handleCreateNew = () => {
     setNewAgentName('');
+    setNewAgentSubheader('');
     setShowCreateDialog(true);
   };
 
@@ -109,6 +122,7 @@ export default function AgentsPage() {
     const newAgent = {
       id: `agent_${Date.now()}` as any,
       name: newAgentName.trim(),
+      subheader: newAgentSubheader.trim() || undefined,
       modelId: '' as any, // Blank model ID - user needs to add data sources first
       versionTag: 'v1',
       status: AgentStatus.Draft,
@@ -121,6 +135,7 @@ export default function AgentsPage() {
     toast.success(`Agent "${newAgentName}" created! Add data sources to begin.`);
     setShowCreateDialog(false);
     setNewAgentName('');
+    setNewAgentSubheader('');
     
     // Navigate to sources page to start configuration
     router.push('/sources');
@@ -175,7 +190,7 @@ export default function AgentsPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
             {filteredAgents.map((agent) => (
               <AgentCard
                 key={agent.id}
@@ -186,6 +201,7 @@ export default function AgentsPage() {
                 onDelete={handleDelete}
                 onPublish={handlePublish}
                 onTest={handleTest}
+                onUpdatePrompts={handleUpdatePrompts}
               />
             ))}
           </div>
@@ -196,9 +212,9 @@ export default function AgentsPage() {
       <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rename Agent</DialogTitle>
+            <DialogTitle>Edit Agent</DialogTitle>
             <DialogDescription>
-              Enter a new name for "{selectedAgent?.name}"
+              Update the name and subheader for "{selectedAgent?.name}"
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -209,12 +225,29 @@ export default function AgentsPage() {
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === 'Enter' && !e.shiftKey) {
                     handleRenameConfirm();
                   }
                 }}
                 autoFocus
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="subheader">Subheader (optional)</Label>
+              <Input
+                id="subheader"
+                placeholder="e.g., Your AI-powered assistant"
+                value={newSubheader}
+                onChange={(e) => setNewSubheader(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    handleRenameConfirm();
+                  }
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                This will appear below the agent name in the chat window
+              </p>
             </div>
           </div>
           <DialogFooter>
@@ -232,7 +265,7 @@ export default function AgentsPage() {
           <DialogHeader>
             <DialogTitle>Create New AI Agent</DialogTitle>
             <DialogDescription>
-              Give your AI agent a name. You'll configure data sources and instructions next.
+              Give your AI agent a name and subheader. You'll configure data sources and instructions next.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -244,12 +277,29 @@ export default function AgentsPage() {
                 value={newAgentName}
                 onChange={(e) => setNewAgentName(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === 'Enter' && !e.shiftKey) {
                     handleCreateConfirm();
                   }
                 }}
                 autoFocus
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="newAgentSubheader">Subheader (optional)</Label>
+              <Input
+                id="newAgentSubheader"
+                placeholder="e.g., Your AI-powered assistant"
+                value={newAgentSubheader}
+                onChange={(e) => setNewAgentSubheader(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    handleCreateConfirm();
+                  }
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                This will appear below the agent name in the chat window
+              </p>
             </div>
           </div>
           <DialogFooter>

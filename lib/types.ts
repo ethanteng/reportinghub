@@ -135,6 +135,8 @@ export enum AgentStatus {
 export interface AgentConfig {
   id: ID;
   name: string;
+  subheader?: string;    // Optional subheader shown in chat widget
+  suggestedPrompts?: string[];  // Up to 3 suggested prompts for chat widget
   modelId: ID;
   versionTag: string;    // v1, v2, etc.
   status: AgentStatus;

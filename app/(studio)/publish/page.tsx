@@ -24,38 +24,39 @@ import {
 import { AgentConfig, AgentStatus } from '../../../lib/types';
 
 export default function PublishPage() {
-  const { models, dataSources, getAnalyzerRunForModel, getInstructionCount, agentConfigs, addAgentConfig, getCurrentAgent } =
+  const { models, dataSources, getAnalyzerRunForModel, getInstructionCount, addAgentConfig, getCurrentAgent } =
     useBiGeniusStore();
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
   const [showTestChat, setShowTestChat] = useState(false);
 
-  const currentConfig = agentConfigs[agentConfigs.length - 1];
   const currentAgent = getCurrentAgent();
   const connectedSources = dataSources.filter((ds) => 
-    currentConfig?.sourceIds.includes(ds.id)
+    currentAgent?.sourceIds.includes(ds.id)
   );
-  const model = models.find((m) => m.id === currentConfig?.modelId) || models[0];
+  const model = models.find((m) => m.id === currentAgent?.modelId) || models[0];
   const analyzerRun = getAnalyzerRunForModel(model?.id);
   const readinessScore = analyzerRun?.summary?.readinessScore || 0;
   const instructionCount = getInstructionCount();
 
   const handleClone = () => {
+    if (!currentAgent) return;
+    
     // Parse version tag (e.g., "v1" -> 1)
     const versionNum = parseInt(model.versionTag.replace('v', ''), 10);
     const newVersion = `v${versionNum + 1}`;
 
     const newConfig: AgentConfig = {
       id: `config_${Date.now()}`,
-      name: `${currentConfig.name} (Clone)`,
+      name: `${currentAgent.name} (Clone)`,
       modelId: model.id,
       versionTag: newVersion,
       status: AgentStatus.Draft, // Clones start as draft
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      clonedFromId: currentConfig.id,
-      instructionIds: [...currentConfig.instructionIds],
-      sourceIds: [...currentConfig.sourceIds],
+      clonedFromId: currentAgent.id,
+      instructionIds: [...currentAgent.instructionIds],
+      sourceIds: [...currentAgent.sourceIds],
     };
 
     addAgentConfig(newConfig);

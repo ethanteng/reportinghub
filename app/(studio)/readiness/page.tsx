@@ -14,17 +14,16 @@ import { CheckCircle2, Database, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function ReadinessPage() {
-  const { models, agentConfigs, getAnalyzerRunForModel, setAnalyzerRun, dataSources, getCurrentAgent } = useBiGeniusStore();
+  const { models, getAnalyzerRunForModel, setAnalyzerRun, dataSources, getCurrentAgent } = useBiGeniusStore();
   const [progress, setProgress] = useState(0);
   const [showTestChat, setShowTestChat] = useState(false);
   
   // Get the current agent config and its associated model
-  const currentConfig = agentConfigs[agentConfigs.length - 1];
   const currentAgent = getCurrentAgent();
   const connectedSources = dataSources.filter((ds) => 
-    currentConfig?.sourceIds.includes(ds.id)
+    currentAgent?.sourceIds.includes(ds.id)
   );
-  const model = models.find((m) => m.id === currentConfig?.modelId) || models[0];
+  const model = models.find((m) => m.id === currentAgent?.modelId) || models[0];
   const analyzerRun = getAnalyzerRunForModel(model?.id);
 
   const handleRunAnalysis = async () => {

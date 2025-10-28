@@ -440,6 +440,12 @@ export const agentConfigs: AgentConfig[] = [
   {
     id: id(),
     name: "Sales Assistant",
+    subheader: "Your AI-powered sales analytics expert",
+    suggestedPrompts: [
+      "What are my top 10 sales by Region?",
+      "Who are my best performing Sales Rep?",
+      "Show me monthly revenue trends for this year"
+    ],
     modelId: salesModel.id,
     versionTag: "v2",
     status: AgentStatus.Live,
@@ -456,6 +462,11 @@ export const agentConfigs: AgentConfig[] = [
   {
     id: id(),
     name: "Warehouse Inventory Bot",
+    subheader: "Real-time inventory insights at your fingertips",
+    suggestedPrompts: [
+      "What products are low in stock?",
+      "Show me inventory by location"
+    ],
     modelId: warehouseModel.id,
     versionTag: "v1",
     status: AgentStatus.Draft,
@@ -472,6 +483,12 @@ export const agentConfigs: AgentConfig[] = [
   {
     id: id(),
     name: "Documentation Assistant",
+    subheader: "Quick answers from your knowledge base",
+    suggestedPrompts: [
+      "How do I configure user permissions?",
+      "What's new in the latest version?",
+      "Where can I find troubleshooting guides?"
+    ],
     modelId: docsModel.id,
     versionTag: "v1",
     status: AgentStatus.Draft,

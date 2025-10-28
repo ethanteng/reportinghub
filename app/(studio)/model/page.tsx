@@ -24,17 +24,16 @@ const iconMap = {
 
 function ModelPageContent() {
   const searchParams = useSearchParams();
-  const { models, selectedEntity, dataSources, agentConfigs, setSelectedEntity, getCurrentAgent } = useBiGeniusStore();
+  const { models, selectedEntity, dataSources, setSelectedEntity, getCurrentAgent } = useBiGeniusStore();
   const [filterWithInstructions, setFilterWithInstructions] = useState(false);
   const [initialExpandedModels, setInitialExpandedModels] = useState<Set<string>>();
   const [initialExpandedTables, setInitialExpandedTables] = useState<Set<string>>();
   const [showTestChat, setShowTestChat] = useState(false);
   
   // Get the current agent config to see which sources are connected
-  const currentConfig = agentConfigs[agentConfigs.length - 1];
   const currentAgent = getCurrentAgent();
   const connectedSources = dataSources.filter((ds) => 
-    currentConfig?.sourceIds.includes(ds.id)
+    currentAgent?.sourceIds.includes(ds.id)
   );
 
   // Handle navigation from findings - expand tree and select entity
