@@ -130,7 +130,19 @@ export const useBiGeniusStore = create<BiGeniusStore>((set, get) => ({
       model: state.model.id === modelId ? { ...state.model, ...updates } : state.model,
     })),
   
-  setAnalyzerRun: (run) => set({ analyzerRun: run }),
+  setAnalyzerRun: (run) => 
+    set((state) => {
+      if (!run) return { analyzerRun: null };
+      
+      // Update both the singular property and the Map
+      const newAnalyzerRuns = new Map(state.analyzerRuns);
+      newAnalyzerRuns.set(run.modelId, run);
+      
+      return {
+        analyzerRun: run,
+        analyzerRuns: newAnalyzerRuns,
+      };
+    }),
   
   getAnalyzerRunForModel: (modelId) => {
     const state = get();
