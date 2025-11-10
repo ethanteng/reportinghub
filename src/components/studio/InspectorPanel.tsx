@@ -403,7 +403,7 @@ function SummaryTab({ entity }: { entity: NonNullable<SelectedEntity> }) {
           <label className="text-xs font-medium text-muted-foreground">Column List</label>
           <div className="text-xs mt-1 space-y-1">
             {table.columns.map((col) => (
-              <div key={col.id} className="flex justify-between py-1 px-2 bg-muted rounded">
+              <div key={col.id} className="flex items-center justify-between py-1 px-2 bg-muted rounded">
                 <span>{col.name}</span>
                 <span className="text-muted-foreground">{col.dataType}</span>
               </div>

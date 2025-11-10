@@ -9,9 +9,10 @@ import { AgentChatWidget } from '@/components/studio/AgentChatWidget';
 import { useBiGeniusStore } from '@/store/useBiGeniusStore';
 import { runAnalyzer } from '../../../lib/mockServices';
 import { toast } from 'sonner';
-import { AnalyzerStatus } from '../../../lib/types';
+import { AnalyzerStatus, AgentStatus } from '../../../lib/types';
 import { CheckCircle2, Database, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 export default function ReadinessPage() {
   const { models, getAnalyzerRunForModel, setAnalyzerRun, dataSources, getCurrentAgent } = useBiGeniusStore();
@@ -118,18 +119,41 @@ export default function ReadinessPage() {
       <div className="border-b bg-background sticky top-0 z-10">
         <div className="px-6 py-4">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold">AI Readiness</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Analyze your model for optimal AI query performance
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-semibold">AI Readiness</h1>
+                {currentAgent && (
+                  <Badge
+                    variant={
+                      currentAgent.status === AgentStatus.Live ? 'default' : 'secondary'
+                    }
+                  >
+                    {currentAgent.status === AgentStatus.Live ? 'Live' : 'Draft'}
+                  </Badge>
+                )}
+                {currentAgent && (
+                  <Badge variant="outline" className="text-xs uppercase">
+                    {currentAgent.versionTag}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Validate data quality and modelling choices before promoting your agent.
               </p>
+              {currentAgent && (
+                <p className="text-xs text-muted-foreground">
+                  Reviewing: <span className="font-medium">{currentAgent.name}</span>
+                </p>
+              )}
             </div>
-            {currentAgent && (
-              <Button onClick={() => setShowTestChat(true)} variant="outline">
-                <Play className="h-4 w-4 mr-2" />
-                Test Agent
-              </Button>
-            )}
+            <div className="flex gap-2">
+              {currentAgent && (
+                <Button onClick={() => setShowTestChat(true)} variant="outline">
+                  <Play className="h-4 w-4 mr-2" />
+                  Test Agent
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>

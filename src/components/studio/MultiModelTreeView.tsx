@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, ChevronDown, Database, Table2, Columns, Brain } from 'lucide-react';
+import { ChevronRight, ChevronDown, Database, Table2, Columns, Brain, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -31,7 +31,16 @@ export function MultiModelTreeView({
   const [expandedModels, setExpandedModels] = useState<Set<string>>(initialExpandedModels || new Set());
   const [expandedTables, setExpandedTables] = useState<Set<string>>(initialExpandedTables || new Set());
   const [searchQuery, setSearchQuery] = useState('');
-  const { selectedEntity, setSelectedEntity } = useBiGeniusStore();
+  const {
+    selectedEntity,
+    setSelectedEntity,
+    isTableIncluded,
+    isColumnIncluded,
+    setTableInclusion,
+    setColumnInclusion,
+    getCurrentAgent,
+  } = useBiGeniusStore();
+  const currentAgent = getCurrentAgent();
 
   // Update expansion state when initial props change (e.g., from navigation)
   useEffect(() => {
@@ -214,6 +223,9 @@ export function MultiModelTreeView({
                     <Brain className="h-3 w-3 text-purple-500 flex-shrink-0" />
                   </span>
                 )}
+                <span className="ml-auto flex justify-center w-28 text-[11px] uppercase tracking-wide text-muted-foreground text-center whitespace-nowrap">
+                  Visible to agent
+                </span>
               </div>
 
               {/* Tables */}
@@ -234,13 +246,15 @@ export function MultiModelTreeView({
                     })
                     .map((table) => {
                       const isTableExpanded = expandedTables.has(table.id);
+                      const tableIncluded = isTableIncluded(model.id, table.id);
 
                       return (
                         <div key={table.id}>
                           <div
                             className={cn(
                               'flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-muted',
-                              isSelected('table', table.id) && 'bg-primary/10 text-primary'
+                              isSelected('table', table.id) && 'bg-primary/10 text-primary',
+                              !tableIncluded && 'opacity-60'
                             )}
                             onClick={() => handleTableClick(table, model.id)}
                           >
@@ -256,6 +270,23 @@ export function MultiModelTreeView({
                                 <Brain className="h-3 w-3 text-purple-500 flex-shrink-0" />
                               </span>
                             )}
+                            <div
+                              className="ml-auto flex items-center justify-center gap-1 w-28"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              {!tableIncluded && (
+                                <EyeOff className="h-3.5 w-3.5 text-muted-foreground" title="Hidden from agent" />
+                              )}
+                              <Checkbox
+                                checked={tableIncluded}
+                                onCheckedChange={(checked) =>
+                                  setTableInclusion(model.id, table.id, checked === true)
+                                }
+                                aria-label="Visible to agent"
+                                title="Visible to agent"
+                                disabled={!currentAgent}
+                              />
+                            </div>
                           </div>
 
                           {/* Columns */}
@@ -269,29 +300,53 @@ export function MultiModelTreeView({
                                   }
                                   return true;
                                 })
-                                .map((column) => (
-                                  <div
-                                    key={column.id}
-                                    className={cn(
-                                      'flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-muted',
-                                      isSelected('column', column.id) && 'bg-primary/10 text-primary'
-                                    )}
-                                    onClick={() => handleColumnClick(column, table.id, model.id)}
-                                  >
-                                    <div className="w-4 flex-shrink-0" />
-                                    <Columns className="h-4 w-4 flex-shrink-0" />
-                                    <span className="text-sm">{column.name}</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      {column.dataType}
-                                    </span>
-                                    {showInstructionBadges &&
-                                      (column.instructions?.length || 0) > 0 && (
-                                        <span title="Has instructions">
-                                          <Brain className="h-3 w-3 text-purple-500 flex-shrink-0" />
-                                        </span>
+                                .map((column) => {
+                                  const columnIncluded = isColumnIncluded(model.id, table.id, column.id);
+                                  return (
+                                    <div
+                                      key={column.id}
+                                      className={cn(
+                                        'flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-muted',
+                                        isSelected('column', column.id) && 'bg-primary/10 text-primary',
+                                        !columnIncluded && 'opacity-60'
                                       )}
-                                  </div>
-                                ))}
+                                      onClick={() => handleColumnClick(column, table.id, model.id)}
+                                    >
+                                      <div className="w-4 flex-shrink-0" />
+                                      <Columns className="h-4 w-4 flex-shrink-0" />
+                                      <span className="text-sm">{column.name}</span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {column.dataType}
+                                      </span>
+                                      {showInstructionBadges &&
+                                        (column.instructions?.length || 0) > 0 && (
+                                          <span title="Has instructions">
+                                            <Brain className="h-3 w-3 text-purple-500 flex-shrink-0" />
+                                          </span>
+                                        )}
+                                      <div
+                                        className="ml-auto flex items-center justify-center gap-1 w-28"
+                                        onClick={(event) => event.stopPropagation()}
+                                      >
+                                        {!columnIncluded && (
+                                          <EyeOff
+                                            className="h-3.5 w-3.5 text-muted-foreground"
+                                            title="Hidden from agent"
+                                          />
+                                        )}
+                                        <Checkbox
+                                          checked={columnIncluded}
+                                          onCheckedChange={(checked) =>
+                                            setColumnInclusion(model.id, table.id, column.id, checked === true)
+                                          }
+                                          aria-label="Visible to agent"
+                                          title="Visible to agent"
+                                          disabled={!currentAgent || !tableIncluded}
+                                        />
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                             </div>
                           )}
                         </div>

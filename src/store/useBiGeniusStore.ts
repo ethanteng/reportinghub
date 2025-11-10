@@ -11,6 +11,8 @@ import {
   InstructionHistory,
   InstructionChangeType,
   InstructionScope,
+  VisibilityOverrides,
+  ModelVisibilityOverrides,
 } from '../../lib/types';
 import { 
   dataSources, 
@@ -74,6 +76,12 @@ interface BiGeniusStore {
   
   // Helper to get instruction count
   getInstructionCount: () => number;
+
+  // Visibility controls
+  isTableIncluded: (modelId: ID, tableId: ID) => boolean;
+  isColumnIncluded: (modelId: ID, tableId: ID, columnId: ID) => boolean;
+  setTableInclusion: (modelId: ID, tableId: ID, included: boolean) => void;
+  setColumnInclusion: (modelId: ID, tableId: ID, columnId: ID, included: boolean) => void;
 }
 
 export const useBiGeniusStore = create<BiGeniusStore>((set, get) => ({
@@ -207,6 +215,9 @@ export const useBiGeniusStore = create<BiGeniusStore>((set, get) => ({
       updatedAt: new Date().toISOString(),
       publishedAt: undefined,
       clonedFromId: original.id,
+      visibilityOverrides: original.visibilityOverrides
+        ? JSON.parse(JSON.stringify(original.visibilityOverrides))
+        : undefined,
     };
     
     set((state) => ({
@@ -246,6 +257,150 @@ export const useBiGeniusStore = create<BiGeniusStore>((set, get) => ({
     return state.instructionHistory
       .filter((h) => h.targetId === targetId)
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  },
+
+  isTableIncluded: (modelId, tableId) => {
+    const state = get();
+    const agent = state.getCurrentAgent();
+    if (!agent) return true;
+
+    const overrides = agent.visibilityOverrides;
+    if (!overrides) return true;
+
+    const modelOverrides = overrides[modelId];
+    if (!modelOverrides) return true;
+
+    return !modelOverrides.excludedTableIds.includes(tableId);
+  },
+
+  isColumnIncluded: (modelId, tableId, columnId) => {
+    const state = get();
+    const tableIncluded = state.isTableIncluded(modelId, tableId);
+    if (!tableIncluded) return false;
+
+    const agent = state.getCurrentAgent();
+    if (!agent) return true;
+
+    const overrides = agent.visibilityOverrides;
+    if (!overrides) return true;
+
+    const modelOverrides = overrides[modelId];
+    if (!modelOverrides) return true;
+
+    return !modelOverrides.excludedColumnIds.includes(columnId);
+  },
+
+  setTableInclusion: (modelId, tableId, included) => {
+    const state = get();
+    const { currentAgentId, agentConfigs } = state;
+    if (!currentAgentId) return;
+
+    const updatedAgentConfigs = agentConfigs.map((config) => {
+      if (config.id !== currentAgentId) {
+        return config;
+      }
+
+      const overrides: VisibilityOverrides = { ...(config.visibilityOverrides ?? {}) };
+      const modelOverrides: ModelVisibilityOverrides = overrides[modelId]
+        ? {
+            excludedTableIds: [...overrides[modelId].excludedTableIds],
+            excludedColumnIds: [...overrides[modelId].excludedColumnIds],
+          }
+        : { excludedTableIds: [], excludedColumnIds: [] };
+
+      if (included) {
+        modelOverrides.excludedTableIds = modelOverrides.excludedTableIds.filter((id) => id !== tableId);
+        // When re-including a table, clear any column overrides for that table to avoid stale entries
+        const table = state.models
+          .find((m) => m.id === modelId)
+          ?.tables.find((t) => t.id === tableId);
+        if (table) {
+          const columnIds = table.columns.map((c) => c.id);
+          modelOverrides.excludedColumnIds = modelOverrides.excludedColumnIds.filter(
+            (id) => !columnIds.includes(id)
+          );
+        }
+      } else {
+        if (!modelOverrides.excludedTableIds.includes(tableId)) {
+          modelOverrides.excludedTableIds.push(tableId);
+        }
+        // Also remove any column overrides belonging to the table (redundant when table hidden)
+        const table = state.models
+          .find((m) => m.id === modelId)
+          ?.tables.find((t) => t.id === tableId);
+        if (table) {
+          const columnIds = new Set(table.columns.map((c) => c.id));
+          modelOverrides.excludedColumnIds = modelOverrides.excludedColumnIds.filter(
+            (id) => !columnIds.has(id)
+          );
+        }
+      }
+
+      if (modelOverrides.excludedTableIds.length === 0 && modelOverrides.excludedColumnIds.length === 0) {
+        delete overrides[modelId];
+      } else {
+        overrides[modelId] = modelOverrides;
+      }
+
+      const visibilityOverrides = Object.keys(overrides).length > 0 ? overrides : undefined;
+
+      return {
+        ...config,
+        visibilityOverrides,
+        updatedAt: new Date().toISOString(),
+      };
+    });
+
+    set({ agentConfigs: updatedAgentConfigs });
+  },
+
+  setColumnInclusion: (modelId, tableId, columnId, included) => {
+    const state = get();
+    const { currentAgentId, agentConfigs } = state;
+    if (!currentAgentId) return;
+
+    const updatedAgentConfigs = agentConfigs.map((config) => {
+      if (config.id !== currentAgentId) {
+        return config;
+      }
+
+      const overrides: VisibilityOverrides = { ...(config.visibilityOverrides ?? {}) };
+      const modelOverrides: ModelVisibilityOverrides = overrides[modelId]
+        ? {
+            excludedTableIds: [...overrides[modelId].excludedTableIds],
+            excludedColumnIds: [...overrides[modelId].excludedColumnIds],
+          }
+        : { excludedTableIds: [], excludedColumnIds: [] };
+
+      // If user is including a column and the table was previously excluded, re-include the table
+      if (included && modelOverrides.excludedTableIds.includes(tableId)) {
+        modelOverrides.excludedTableIds = modelOverrides.excludedTableIds.filter((id) => id !== tableId);
+      }
+
+      if (included) {
+        modelOverrides.excludedColumnIds = modelOverrides.excludedColumnIds.filter((id) => id !== columnId);
+      } else {
+        if (!modelOverrides.excludedColumnIds.includes(columnId)) {
+          modelOverrides.excludedColumnIds.push(columnId);
+        }
+      }
+
+      if (modelOverrides.excludedTableIds.length === 0 && modelOverrides.excludedColumnIds.length === 0) {
+        delete overrides[modelId];
+      } else {
+        overrides[modelId] = modelOverrides;
+      }
+
+      const visibilityOverrides = Object.keys(overrides).length > 0 ? overrides : undefined;
+
+      return {
+        ...config,
+        visibilityOverrides,
+        updatedAt: new Date().toISOString(),
+      };
+    });
+
+    set({ agentConfigs: updatedAgentConfigs });
   },
 }));
 

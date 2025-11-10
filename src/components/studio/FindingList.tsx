@@ -8,9 +8,14 @@ import {
   AlertCircle,
   AlertTriangle,
   Info,
-  ExternalLink,
   ChevronRight,
 } from 'lucide-react';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 import { AnalyzerFinding, ReadinessSeverity } from '../../../lib/types';
 import { useBiGeniusStore } from '@/store/useBiGeniusStore';
 import { cn } from '@/lib/utils';
@@ -24,21 +29,21 @@ const severityConfig = {
     icon: AlertCircle,
     label: 'Blocker',
     color: 'text-red-600',
-    bgColor: 'bg-red-50',
+    bgColor: 'bg-red-100',
     borderColor: 'border-red-200',
   },
   [ReadinessSeverity.Warn]: {
     icon: AlertTriangle,
     label: 'Warning',
     color: 'text-yellow-600',
-    bgColor: 'bg-yellow-50',
+    bgColor: 'bg-yellow-100',
     borderColor: 'border-yellow-200',
   },
   [ReadinessSeverity.Info]: {
     icon: Info,
-    label: 'Info',
+    label: 'Quick Fix',
     color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
+    bgColor: 'bg-blue-100',
     borderColor: 'border-blue-200',
   },
 };
@@ -47,32 +52,38 @@ export function FindingList({ findings }: FindingListProps) {
   const router = useRouter();
   const { models, dataSources } = useBiGeniusStore();
 
-  const groupedFindings = {
-    [ReadinessSeverity.Blocker]: findings.filter((f) => f.severity === ReadinessSeverity.Blocker),
-    [ReadinessSeverity.Warn]: findings.filter((f) => f.severity === ReadinessSeverity.Warn),
-    [ReadinessSeverity.Info]: findings.filter((f) => f.severity === ReadinessSeverity.Info),
-  };
+  const blockers = findings.filter(
+    (f) => f.severity === ReadinessSeverity.Blocker
+  );
+  const warnings = findings.filter(
+    (f) => f.severity === ReadinessSeverity.Warn
+  );
+  const quickFixes = findings.filter(
+    (f) => f.severity === ReadinessSeverity.Info
+  );
+  const riskFindings = [...blockers, ...warnings];
+  const defaultTab = riskFindings.length > 0 ? 'risk' : 'quick';
 
-  // Get breadcrumb path for a finding
   const getBreadcrumb = (finding: AnalyzerFinding): string => {
-    // Find which model this finding belongs to
-    let foundModel = null;
-    let foundTable = null;
-    let foundColumn = null;
+    let foundModel: (typeof models)[number] | null = null;
+    let foundTable: (typeof models)[number]['tables'][number] | null = null;
+    let foundColumn:
+      | (typeof models)[number]['tables'][number]['columns'][number]
+      | null = null;
 
     for (const model of models) {
       if (finding.entityType === 'model' && model.id === finding.entityId) {
         foundModel = model;
         break;
       }
-      
+
       for (const table of model.tables) {
         if (finding.entityType === 'table' && table.id === finding.entityId) {
           foundModel = model;
           foundTable = table;
           break;
         }
-        
+
         for (const column of table.columns) {
           if (finding.entityType === 'column' && column.id === finding.entityId) {
             foundModel = model;
@@ -88,32 +99,33 @@ export function FindingList({ findings }: FindingListProps) {
 
     if (!foundModel) return '';
 
-    // Find the data source for this model
-    const dataSource = dataSources.find((ds) => ds.id === foundModel.sourceId);
-    const parts = [dataSource?.alias || dataSource?.name || 'Unknown Source', foundModel.name];
-    
+    const dataSource = dataSources.find((ds) => ds.id === foundModel!.sourceId);
+    const parts = [
+      dataSource?.alias || dataSource?.name || 'Unknown Source',
+      foundModel.name,
+    ];
+
     if (foundTable) parts.push(foundTable.name);
     if (foundColumn) parts.push(foundColumn.name);
-    
+
     return parts.join(' › ');
   };
 
   const handleFindingClick = (finding: AnalyzerFinding) => {
-    // Find which model this finding belongs to
-    let targetModel = null;
-    
+    let targetModel: (typeof models)[number] | null = null;
+
     for (const model of models) {
       if (finding.entityType === 'model' && model.id === finding.entityId) {
         targetModel = model;
         break;
       }
-      
+
       for (const table of model.tables) {
         if (finding.entityType === 'table' && table.id === finding.entityId) {
           targetModel = model;
           break;
         }
-        
+
         for (const column of table.columns) {
           if (finding.entityType === 'column' && column.id === finding.entityId) {
             targetModel = model;
@@ -127,29 +139,89 @@ export function FindingList({ findings }: FindingListProps) {
 
     if (!targetModel) return;
 
-    // Encode recommendation for URL
     const recommendation = encodeURIComponent(finding.recommendation);
     const findingTitle = encodeURIComponent(finding.title);
     const severity = encodeURIComponent(finding.severity);
 
-    // Navigate to the entity in the model page with URL params for auto-expansion and recommendation
-    // The model page's useEffect will handle setting the selected entity based on URL params
     if (finding.entityType === 'model') {
-      router.push(`/model?entityType=model&entityId=${finding.entityId}&recommendation=${recommendation}&findingTitle=${findingTitle}&severity=${severity}`);
+      router.push(
+        `/model?entityType=model&entityId=${finding.entityId}&recommendation=${recommendation}&findingTitle=${findingTitle}&severity=${severity}`
+      );
     } else if (finding.entityType === 'table') {
-      const table = targetModel.tables.find((t) => t.id === finding.entityId);
-      if (table) {
-        router.push(`/model?entityType=table&entityId=${finding.entityId}&modelId=${targetModel.id}&recommendation=${recommendation}&findingTitle=${findingTitle}&severity=${severity}`);
-      }
+      router.push(
+        `/model?entityType=table&entityId=${finding.entityId}&modelId=${targetModel.id}&recommendation=${recommendation}&findingTitle=${findingTitle}&severity=${severity}`
+      );
     } else if (finding.entityType === 'column') {
       for (const table of targetModel.tables) {
         const column = table.columns.find((c) => c.id === finding.entityId);
         if (column) {
-          router.push(`/model?entityType=column&entityId=${finding.entityId}&tableId=${table.id}&modelId=${targetModel.id}&recommendation=${recommendation}&findingTitle=${findingTitle}&severity=${severity}`);
+          router.push(
+            `/model?entityType=column&entityId=${finding.entityId}&tableId=${table.id}&modelId=${targetModel.id}&recommendation=${recommendation}&findingTitle=${findingTitle}&severity=${severity}`
+          );
           break;
         }
       }
     }
+  };
+
+  const renderFindingCard = (finding: AnalyzerFinding) => {
+    const config = severityConfig[finding.severity];
+    const Icon = config.icon;
+    const breadcrumb = getBreadcrumb(finding);
+
+    return (
+      <Card
+        key={finding.id}
+        className={cn(
+          'p-4 cursor-pointer transition-all hover:shadow-lg border-l-4',
+          config.borderColor
+        )}
+        onClick={() => handleFindingClick(finding)}
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className={cn(
+              'rounded-md p-2 flex items-center justify-center',
+              config.bgColor
+            )}
+          >
+            <Icon className={cn('h-4 w-4', config.color)} />
+          </div>
+          <div className="flex-1 min-w-0">
+            {breadcrumb && (
+              <div className="text-[11px] text-muted-foreground mb-1 font-mono truncate">
+                {breadcrumb}
+              </div>
+            )}
+            <div className="flex items-center gap-2 mb-1">
+              <Badge variant="outline" className={cn('text-xs', config.color)}>
+                {config.label}
+              </Badge>
+              <span className="text-[11px] text-muted-foreground">
+                Impact: {finding.severity === ReadinessSeverity.Info ? 'Quality' : 'Accuracy'}
+              </span>
+            </div>
+            <h4 className="font-medium text-sm">{finding.title}</h4>
+            <p className="text-sm text-muted-foreground mt-2">
+              {finding.recommendation}
+            </p>
+            <div className="mt-3 flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleFindingClick(finding);
+                }}
+              >
+                Open in Model
+                <ChevronRight className="h-3 w-3 ml-1" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
   };
 
   if (findings.length === 0) {
@@ -165,59 +237,69 @@ export function FindingList({ findings }: FindingListProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {Object.entries(groupedFindings).map(([severity, items]) => {
-        if (items.length === 0) return null;
+    <Tabs defaultValue={defaultTab} className="w-full">
+      <TabsList className="grid grid-cols-2 max-w-md">
+        <TabsTrigger value="risk">
+          Warnings &amp; Blockers ({riskFindings.length})
+        </TabsTrigger>
+        <TabsTrigger value="quick">
+          Quick Wins ({quickFixes.length})
+        </TabsTrigger>
+      </TabsList>
 
-        const config = severityConfig[severity as ReadinessSeverity];
-        const Icon = config.icon;
+      <TabsContent value="risk" className="mt-4 space-y-6">
+        <p className="text-xs text-muted-foreground">
+          Tackle blockers first to prevent incorrect answers. Address warnings
+          next to improve reliability.
+        </p>
 
-        return (
-          <div key={severity}>
-            <div className="flex items-center gap-2 mb-3">
-              <Icon className={cn('h-5 w-5', config.color)} />
-              <h3 className="text-lg font-semibold">{config.label}s</h3>
-              <Badge variant="secondary">{items.length}</Badge>
+        {blockers.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <h4 className="text-sm font-semibold">Blockers</h4>
+              <Badge variant="secondary">{blockers.length}</Badge>
             </div>
-
-            <div className="space-y-2">
-              {items.map((finding) => {
-                const breadcrumb = getBreadcrumb(finding);
-                return (
-                  <Card
-                    key={finding.id}
-                    className={cn(
-                      'p-4 cursor-pointer transition-colors hover:shadow-md',
-                      config.borderColor
-                    )}
-                    onClick={() => handleFindingClick(finding)}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        {breadcrumb && (
-                          <div className="text-xs text-muted-foreground mb-1 font-mono">
-                            {breadcrumb}
-                          </div>
-                        )}
-                        <h4 className="font-medium text-sm mb-2">{finding.title}</h4>
-                        <p className="text-sm text-muted-foreground mb-3">
-                          {finding.recommendation}
-                        </p>
-                        <Button variant="link" className="h-auto p-0 text-xs">
-                          View in Model
-                          <ChevronRight className="h-3 w-3 ml-1" />
-                        </Button>
-                      </div>
-                      <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    </div>
-                  </Card>
-                );
-              })}
+            <div className="space-y-3">
+              {blockers.map(renderFindingCard)}
             </div>
           </div>
-        );
-      })}
-    </div>
+        )}
+
+        {warnings.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+              <h4 className="text-sm font-semibold">Warnings</h4>
+              <Badge variant="secondary">{warnings.length}</Badge>
+            </div>
+            <div className="space-y-3">
+              {warnings.map(renderFindingCard)}
+            </div>
+          </div>
+        )}
+
+        {riskFindings.length === 0 && (
+          <Card className="p-6 text-center text-sm text-muted-foreground">
+            No warnings or blockers detected.
+          </Card>
+        )}
+      </TabsContent>
+
+      <TabsContent value="quick" className="mt-4 space-y-3">
+        <p className="text-xs text-muted-foreground">
+          Apply these improvements to tighten responses and reduce follow-up work.
+        </p>
+
+        {quickFixes.length > 0 ? (
+          <div className="space-y-3">{quickFixes.map(renderFindingCard)}</div>
+        ) : (
+          <Card className="p-6 text-center text-sm text-muted-foreground">
+            No quick wins available right now.
+          </Card>
+        )}
+      </TabsContent>
+    </Tabs>
   );
 }
 

@@ -47,7 +47,7 @@ export function StepRail() {
     },
     {
       id: 'publish',
-      label: 'Publish',
+      label: 'Summary',
       href: '/publish',
       icon: Rocket,
     },

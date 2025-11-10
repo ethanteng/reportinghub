@@ -7,10 +7,11 @@ import { MultiModelTreeView } from '@/components/studio/MultiModelTreeView';
 import { EmptyState } from '@/components/studio/EmptyState';
 import { AgentChatWidget } from '@/components/studio/AgentChatWidget';
 import { useBiGeniusStore } from '@/store/useBiGeniusStore';
-import { Database, Server, FileText, Globe, Network, Play, Edit3, Check, X } from 'lucide-react';
+import { Database, Server, FileText, Globe, Network, Play, Edit3, Check, X, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Card } from '@/components/ui/card';
 import { DataSourceType } from '../../../lib/types';
 import { toast } from 'sonner';
 
@@ -23,7 +24,15 @@ const iconMap = {
 
 function ModelPageContent() {
   const searchParams = useSearchParams();
-  const { models, selectedEntity, dataSources, setSelectedEntity, getCurrentAgent, updateAgentConfig } = useBiGeniusStore();
+  const {
+    models,
+    selectedEntity,
+    dataSources,
+    setSelectedEntity,
+    getCurrentAgent,
+    updateAgentConfig,
+    getAnalyzerRunForModel,
+  } = useBiGeniusStore();
   const [filterWithInstructions, setFilterWithInstructions] = useState(false);
   const [initialExpandedModels, setInitialExpandedModels] = useState<Set<string>>();
   const [initialExpandedTables, setInitialExpandedTables] = useState<Set<string>>();
@@ -42,6 +51,12 @@ function ModelPageContent() {
   const connectedModels = models.filter(model => 
     connectedSourceIds.includes(model.sourceId)
   );
+
+  const primaryModel =
+    connectedModels.find((m) => m.id === currentAgent?.modelId) || connectedModels[0];
+  const analyzerRun = primaryModel ? getAnalyzerRunForModel(primaryModel.id) : null;
+  const aiNarrative =
+    analyzerRun?.summary?.narrative?.trim() || primaryModel?.description?.trim() || '';
 
   // Initialize instructions text when agent loads
   useEffect(() => {
@@ -222,6 +237,24 @@ function ModelPageContent() {
             </div>
           )}
         </div>
+
+        {aiNarrative && (
+          <div className="px-6 pb-4">
+            <Card className="border-primary/25 bg-primary/5">
+              <div className="flex items-start gap-3 p-4">
+                <div className="rounded-md bg-primary/10 p-2 text-primary">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-sm font-semibold text-primary">AI Interpretation</h3>
+                  <p className="text-sm text-muted-foreground whitespace-pre-line">
+                    {aiNarrative}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
 
         {/* Connected Data Sources */}
         {connectedSources.length > 0 && (

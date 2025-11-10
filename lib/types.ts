@@ -62,6 +62,7 @@ export interface Table {
   name: string;
   columns: Column[];
   instructions?: Instruction[]; // scope=table
+  isIncluded?: boolean;   // Overrides for visibility (default true)
   description?: string;   // User-defined description
   synonyms?: string[];    // Alternative names/terms for this table
 }
@@ -71,9 +72,17 @@ export interface Column {
   name: string;
   dataType: string;       // string | number | date | bool etc.
   instructions?: Instruction[]; // scope=column
+  isIncluded?: boolean;   // Overrides for visibility (default true)
   description?: string;   // User-defined description
   synonyms?: string[];    // Alternative names/terms for this column
 }
+
+export interface ModelVisibilityOverrides {
+  excludedTableIds: ID[];
+  excludedColumnIds: ID[];
+}
+
+export type VisibilityOverrides = Record<ID, ModelVisibilityOverrides>;
 
 export interface Instruction {
   id: ID;
@@ -120,6 +129,7 @@ export interface AnalyzerSummary {
   columnsAnalyzed: number;
   quickWins: number;
   blockers: number;
+  narrative?: string;    // AI-generated description of the model
 }
 
 export interface AnalyzerFinding {
@@ -151,6 +161,7 @@ export interface AgentConfig {
   updatedAt?: string;
   publishedAt?: string;
   clonedFromId?: ID;
+  visibilityOverrides?: VisibilityOverrides;
   // denormalized snapshot for portability
   instructionIds: ID[];
   sourceIds: ID[];

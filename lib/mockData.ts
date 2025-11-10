@@ -330,6 +330,8 @@ export const salesAnalyzerRun: AnalyzerRun = {
     columnsAnalyzed: salesModel.tables.reduce((n, t) => n + t.columns.length, 0),
     quickWins: 3,
     blockers: 1,
+    narrative:
+      'AI interpretation: Sales-focused relational model emphasizing revenue, customer segmentation, and order performance across regions. Ideal for trend analysis and KPI storytelling.',
   },
   findings: [
     {
@@ -376,6 +378,8 @@ export const warehouseAnalyzerRun: AnalyzerRun = {
     columnsAnalyzed: warehouseModel.tables.reduce((n, t) => n + t.columns.length, 0),
     quickWins: 2,
     blockers: 0,
+    narrative:
+      'AI interpretation: Operational warehouse dataset covering inventory health, fulfillment, and shipping logistics. Optimized for spotting stock risks and delivery delays.',
   },
   findings: [
     {
@@ -431,6 +435,8 @@ export const docsAnalyzerRun: AnalyzerRun = {
     columnsAnalyzed: docsModel.tables.reduce((n, t) => n + t.columns.length, 0),
     quickWins: 1,
     blockers: 0,
+    narrative:
+      'AI interpretation: Knowledge base model combining articles, FAQs, and search telemetry. Suited for conversational guidance and content gap discovery.',
   },
   findings: [
     {
