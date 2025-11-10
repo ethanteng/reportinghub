@@ -276,7 +276,13 @@ export function MultiModelTreeView({
                               onClick={(event) => event.stopPropagation()}
                             >
                               {!tableIncluded && (
-                                <EyeOff className="h-3.5 w-3.5 text-muted-foreground" title="Hidden from agent" />
+                                <span
+                                  className="inline-flex items-center"
+                                  role="img"
+                                  aria-label="Hidden from agent"
+                                >
+                                  <EyeOff className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                                </span>
                               )}
                               <Checkbox
                                 checked={tableIncluded}
@@ -330,10 +336,16 @@ export function MultiModelTreeView({
                                         onClick={(event) => event.stopPropagation()}
                                       >
                                         {!columnIncluded && (
-                                          <EyeOff
-                                            className="h-3.5 w-3.5 text-muted-foreground"
-                                            title="Hidden from agent"
-                                          />
+                                          <span
+                                            className="inline-flex items-center"
+                                            role="img"
+                                            aria-label="Hidden from agent"
+                                          >
+                                            <EyeOff
+                                              className="h-3.5 w-3.5 text-muted-foreground"
+                                              aria-hidden="true"
+                                            />
+                                          </span>
                                         )}
                                         <Checkbox
                                           checked={columnIncluded}
