@@ -275,15 +275,17 @@ export function MultiModelTreeView({
                               className="ml-auto flex items-center justify-center gap-1 w-28"
                               onClick={(event) => event.stopPropagation()}
                             >
-                              {!tableIncluded && (
-                                <span
-                                  className="inline-flex items-center"
-                                  role="img"
-                                  aria-label="Hidden from agent"
-                                >
-                                  <EyeOff className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-                                </span>
-                              )}
+                              <span
+                                className={cn(
+                                  'inline-flex h-3.5 w-3.5 items-center justify-center text-muted-foreground',
+                                  tableIncluded ? 'opacity-0' : 'opacity-100'
+                                )}
+                                role={tableIncluded ? undefined : 'img'}
+                                aria-label={tableIncluded ? undefined : 'Hidden from agent'}
+                                aria-hidden={tableIncluded ? true : undefined}
+                              >
+                                <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
+                              </span>
                               <Checkbox
                                 checked={tableIncluded}
                                 onCheckedChange={(checked) =>
@@ -335,18 +337,17 @@ export function MultiModelTreeView({
                                         className="ml-auto flex items-center justify-center gap-1 w-28"
                                         onClick={(event) => event.stopPropagation()}
                                       >
-                                        {!columnIncluded && (
-                                          <span
-                                            className="inline-flex items-center"
-                                            role="img"
-                                            aria-label="Hidden from agent"
-                                          >
-                                            <EyeOff
-                                              className="h-3.5 w-3.5 text-muted-foreground"
-                                              aria-hidden="true"
-                                            />
-                                          </span>
-                                        )}
+                                        <span
+                                          className={cn(
+                                            'inline-flex h-3.5 w-3.5 items-center justify-center text-muted-foreground',
+                                            columnIncluded ? 'opacity-0' : 'opacity-100'
+                                          )}
+                                          role={columnIncluded ? undefined : 'img'}
+                                          aria-label={columnIncluded ? undefined : 'Hidden from agent'}
+                                          aria-hidden={columnIncluded ? true : undefined}
+                                        >
+                                          <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
+                                        </span>
                                         <Checkbox
                                           checked={columnIncluded}
                                           onCheckedChange={(checked) =>
