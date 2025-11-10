@@ -24,7 +24,7 @@ export function useGroupMembers(tenant: Tenant, groupId: Guid) {
 }
 
 export function useEffectivePermission(tenantId: Guid, groupId: Guid, reportId?: string) {
-  const { assignments, permissionSets } = usePermissionsStore()
+  const { permissionSets } = usePermissionsStore()
   
   return useMemo(() => {
     const eff = getEffectivePermissionSetId(tenantId, groupId, reportId)
@@ -33,7 +33,7 @@ export function useEffectivePermission(tenantId: Guid, groupId: Guid, reportId?:
       ...eff,
       permissionSet: ps
     }
-  }, [tenantId, groupId, reportId, assignments, permissionSets])
+  }, [tenantId, groupId, reportId, permissionSets])
 }
 
 export function usePermissionSetUsage(permissionSetId: string) {

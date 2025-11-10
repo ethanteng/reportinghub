@@ -99,7 +99,7 @@ export function AuditViewModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px] max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Audit: Who can access "{report.name}"?</DialogTitle>
+          <DialogTitle>Audit: Who can access &ldquo;{report.name}&rdquo;?</DialogTitle>
           <DialogDescription>
             Groups and users with access to this report, including their effective permissions and inheritance source.
           </DialogDescription>

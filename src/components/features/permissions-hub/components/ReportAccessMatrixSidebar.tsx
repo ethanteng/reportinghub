@@ -401,7 +401,7 @@ export function ReportAccessMatrixSidebar({ tenant, reports }: ReportAccessMatri
                       {/* No Assignments */}
                       {summary.assignments.length === 0 && summary.groupAssignments.length === 0 && (
                         <div className="text-sm text-muted-foreground italic py-4 text-center">
-                          No users or groups assigned. Click "Assign Users & Groups" to add permissions.
+                          No users or groups assigned. Click &ldquo;Assign Users &amp; Groups&rdquo; to add permissions.
                         </div>
                       )}
                     </div>

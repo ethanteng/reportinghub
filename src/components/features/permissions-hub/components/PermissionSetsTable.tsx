@@ -184,7 +184,7 @@ export function PermissionSetsTable() {
           
           {permissionSets.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
-              No permission sets created yet. Click "Add New Set" to get started.
+              No permission sets created yet. Click &ldquo;Add New Set&rdquo; to get started.
             </div>
           )}
         </CardContent>

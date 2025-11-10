@@ -53,10 +53,9 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
   const [hasSynced, setHasSynced] = useState(false)
   
   // Hardcoded mock timestamp for prototyping
-  const lastGroupSyncTime = new Date('2024-12-19T14:30:45')
-  const setLastGroupSyncTime = (time: Date | null) => {
-    // Mock function for prototyping
-  }
+  const [lastGroupSyncTime, setLastGroupSyncTime] = useState<Date | null>(
+    () => new Date('2024-12-19T14:30:45')
+  )
   
   // If there's a previous sync, populate with mock groups for search
   useEffect(() => {
@@ -393,7 +392,7 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
               ) : searchQuery.length >= 2 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Search className="h-8 w-8 mx-auto mb-2" />
-                  <p>No groups found matching "{searchQuery}"</p>
+                  <p>No groups found matching &ldquo;{searchQuery}&rdquo;</p>
                   <p className="text-xs mt-1">Try a different search term</p>
         </div>
       ) : (

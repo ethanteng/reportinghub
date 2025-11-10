@@ -203,6 +203,7 @@ export function MultiModelTreeView({
                 role="treeitem"
                 aria-expanded={isModelExpanded}
                 aria-label={`${model.name} model`}
+                aria-selected={isSelected('model', model.id)}
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {

@@ -649,7 +649,7 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
               {searchMode === 'groups' && searchQuery.length >= 2 && !isSearching && searchResults.groups.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   <Search className="h-8 w-8 mx-auto mb-2" />
-                  <p>No groups found matching "{searchQuery}"</p>
+                  <p>No groups found matching &ldquo;{searchQuery}&rdquo;</p>
                   <p className="text-xs mt-1">Try a different search term or check spelling</p>
                 </div>
               )}

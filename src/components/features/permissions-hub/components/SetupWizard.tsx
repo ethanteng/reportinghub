@@ -266,7 +266,7 @@ export function SetupWizard({ open, onOpenChange, tenant }: SetupWizardProps) {
         <DialogHeader>
           <DialogTitle>Report Permissions Setup Wizard</DialogTitle>
           <DialogDescription>
-            Configure your tenant's permission structure in a few simple steps.
+            Configure your tenant&apos;s permission structure in a few simple steps.
           </DialogDescription>
         </DialogHeader>
 

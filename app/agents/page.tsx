@@ -214,7 +214,7 @@ export default function AgentsPage() {
           <DialogHeader>
             <DialogTitle>Edit Agent</DialogTitle>
             <DialogDescription>
-              Update the name and subheader for "{selectedAgent?.name}"
+              Update the name and subheader for &ldquo;{selectedAgent?.name}&rdquo;
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -265,7 +265,7 @@ export default function AgentsPage() {
           <DialogHeader>
             <DialogTitle>Create New AI Agent</DialogTitle>
             <DialogDescription>
-              Give your AI agent a name and subheader. You'll configure data sources and instructions next.
+              Give your AI agent a name and subheader. You&apos;ll configure data sources and instructions next.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">

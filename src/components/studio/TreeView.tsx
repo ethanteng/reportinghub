@@ -146,6 +146,7 @@ export function TreeView({ model, showInstructionBadges, filterWithInstructions 
           role="treeitem"
           aria-expanded={expandedModel}
           aria-label={`${model.name} model`}
+          aria-selected={isSelected('model', model.id)}
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {

@@ -307,8 +307,8 @@ export function AgentCard({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Agent</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{agent.name}"? This action cannot be
-              undone.
+              Are you sure you want to delete &ldquo;{agent.name}&rdquo;? This action cannot
+              be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

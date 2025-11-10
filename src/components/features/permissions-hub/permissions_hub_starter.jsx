@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ const psById = new Map(permissionSets.map((p) => [p.id, p]));
 export default function PermissionsHubStarter() {
   // Pick a tenant to display (Contoso as the default). You can swap in a selector later.
   const [tenantId] = useState(tenantContoso.tenantId);
-  const tenant = byTenantId.get(tenantId)!;
+  const tenant = byTenantId.get(tenantId) ?? tenantContoso;
 
   // Cache computed views
   const groups = tenant.groups;

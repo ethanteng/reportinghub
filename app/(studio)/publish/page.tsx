@@ -73,115 +73,55 @@ export default function SummaryPage() {
 
   const currentAgent = getCurrentAgent();
 
-  if (!currentAgent) {
-    return (
-      <div className="h-full flex flex-col">
-        <div className="border-b bg-background sticky top-0 z-10">
-          <div className="px-6 py-4">
-            <h1 className="text-2xl font-semibold">Agent Summary</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Select an agent configuration to review its summary and publish it.
-            </p>
-          </div>
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <EmptyState
-            icon={Brain}
-            title="No Agent Selected"
-            description="Pick an agent from the list or create a new one to access the summary view."
-            action={
-              <Link href="/agents">
-                <Button size="lg">
-                  Choose Agent
-                </Button>
-              </Link>
-            }
-          />
-        </div>
-      </div>
-    );
-  }
+  const connectedSources = useMemo(() => {
+    if (!currentAgent) {
+      return [];
+    }
+    return dataSources.filter((ds) => currentAgent.sourceIds.includes(ds.id));
+  }, [currentAgent, dataSources]);
 
-  const connectedSources = dataSources.filter((ds) =>
-    currentAgent.sourceIds.includes(ds.id)
+  const connectedSourceIds = useMemo(
+    () => connectedSources.map((ds) => ds.id),
+    [connectedSources]
   );
 
-  if (connectedSources.length === 0) {
-    return (
-      <div className="h-full flex flex-col">
-        <div className="border-b bg-background sticky top-0 z-10">
-          <div className="px-6 py-4">
-            <h1 className="text-2xl font-semibold">Agent Summary</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Connect data sources to generate a configuration summary.
-            </p>
-          </div>
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <EmptyState
-            icon={Rocket}
-            title="No Data Sources Connected"
-            description="Add and sync data sources before reviewing the agent summary or publishing."
-            action={
-              <Link href="/sources">
-                <Button size="lg">
-                  <Database className="h-4 w-4 mr-2" />
-                  Go to Data Sources
-                </Button>
-              </Link>
-            }
-          />
-        </div>
-      </div>
+  const connectedModels = useMemo(() => {
+    if (connectedSourceIds.length === 0) {
+      return [];
+    }
+    return models.filter((model) =>
+      connectedSourceIds.includes(model.sourceId)
     );
-  }
+  }, [models, connectedSourceIds]);
 
-  const connectedSourceIds = connectedSources.map((ds) => ds.id);
-  const connectedModels = models.filter((model) =>
-    connectedSourceIds.includes(model.sourceId)
-  );
+  const model = useMemo(() => {
+    if (!currentAgent) {
+      return undefined;
+    }
 
-  const model =
-    connectedModels.find((m) => m.id === currentAgent.modelId) ??
-    connectedModels[0];
-
-  if (!model) {
     return (
-      <div className="h-full flex flex-col">
-        <div className="border-b bg-background sticky top-0 z-10">
-          <div className="px-6 py-4">
-            <h1 className="text-2xl font-semibold">Agent Summary</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Sync a semantic model to review the configuration summary.
-            </p>
-          </div>
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <EmptyState
-            icon={Table2}
-            title="No Semantic Model Available"
-            description="Sync your data sources to generate semantic models before publishing."
-            action={
-              <Link href="/sources">
-                <Button size="lg">
-                  <Database className="h-4 w-4 mr-2" />
-                  Manage Sources
-                </Button>
-              </Link>
-            }
-          />
-        </div>
-      </div>
+      connectedModels.find((m) => m.id === currentAgent.modelId) ??
+      connectedModels[0]
     );
-  }
+  }, [connectedModels, currentAgent]);
 
-  const analyzerRun = getAnalyzerRunForModel(model.id);
+  const analyzerRun = useMemo(() => {
+    if (!model) {
+      return undefined;
+    }
+    return getAnalyzerRunForModel(model.id);
+  }, [getAnalyzerRunForModel, model]);
+
   const readinessScore = analyzerRun?.summary?.readinessScore ?? 0;
   const readinessScoreDefined =
     analyzerRun?.summary?.readinessScore !== undefined &&
-    analyzerRun.summary.readinessScore !== null;
+    analyzerRun?.summary?.readinessScore !== null;
 
   const visibilityDetails = useMemo<VisibilityDetail[]>(() => {
+    if (!currentAgent) {
+      return [];
+    }
+
     return connectedModels.map((semanticModel) => {
       const overrides = currentAgent.visibilityOverrides?.[semanticModel.id];
       const hiddenTableIds = new Set(overrides?.excludedTableIds ?? []);
@@ -305,6 +245,95 @@ export default function SummaryPage() {
   const sourceDescription = formatListPreview(
     connectedSources.map((source) => source.alias || source.name)
   );
+
+  if (!currentAgent) {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="border-b bg-background sticky top-0 z-10">
+          <div className="px-6 py-4">
+            <h1 className="text-2xl font-semibold">Agent Summary</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Select an agent configuration to review its summary and publish it.
+            </p>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <EmptyState
+            icon={Brain}
+            title="No Agent Selected"
+            description="Pick an agent from the list or create a new one to access the summary view."
+            action={
+              <Link href="/agents">
+                <Button size="lg">
+                  Choose Agent
+                </Button>
+              </Link>
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (connectedSources.length === 0) {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="border-b bg-background sticky top-0 z-10">
+          <div className="px-6 py-4">
+            <h1 className="text-2xl font-semibold">Agent Summary</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Connect data sources to generate a configuration summary.
+            </p>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <EmptyState
+            icon={Rocket}
+            title="No Data Sources Connected"
+            description="Add and sync data sources before reviewing the agent summary or publishing."
+            action={
+              <Link href="/sources">
+                <Button size="lg">
+                  <Database className="h-4 w-4 mr-2" />
+                  Go to Data Sources
+                </Button>
+              </Link>
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (!model) {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="border-b bg-background sticky top-0 z-10">
+          <div className="px-6 py-4">
+            <h1 className="text-2xl font-semibold">Agent Summary</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Sync a semantic model to review the configuration summary.
+            </p>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <EmptyState
+            icon={Table2}
+            title="No Semantic Model Available"
+            description="Sync your data sources to generate semantic models before publishing."
+            action={
+              <Link href="/sources">
+                <Button size="lg">
+                  <Database className="h-4 w-4 mr-2" />
+                  Manage Sources
+                </Button>
+              </Link>
+            }
+          />
+        </div>
+      </div>
+    );
+  }
 
   const handlePublish = async () => {
     setIsPublishing(true);
