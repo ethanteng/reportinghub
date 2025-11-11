@@ -380,52 +380,14 @@ export default function SummaryPage() {
 
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-5xl mx-auto space-y-8">
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Configuration Snapshot</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-              <SummaryCard
-                icon={CheckCircle2}
-                label="Readiness Score"
-                value={readinessScoreDefined ? readinessScore : 'Not analyzed'}
-                variant={
-                  readinessScoreDefined
-                    ? getScoreVariant(readinessScore)
-                    : 'default'
-                }
-              />
-              <SummaryCard
-                icon={Brain}
-                label="Visible Instructions"
-                value={visibilityTotals.visibleInstructions}
-                description={
-                  visibilityTotals.totalInstructions > 0
-                    ? `of ${visibilityTotals.totalInstructions} total instructions`
-                    : 'No instructions added yet'
-                }
-              />
-              <SummaryCard
-                icon={Table2}
-                label="Visible Tables"
-                value={`${visibilityTotals.visibleTables}/${visibilityTotals.totalTables}`}
-                description={`Columns visible: ${visibilityTotals.visibleColumns}/${visibilityTotals.totalColumns}`}
-              />
-              <SummaryCard
-                icon={Database}
-                label="Connected Sources"
-                value={connectedSources.length}
-                description={sourceDescription}
-              />
-            </div>
-
-            {currentAgent.customInstructions && (
-              <Card className="p-6">
-                <h3 className="font-semibold mb-3">Agent Instructions & Context</h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {currentAgent.customInstructions}
-                </p>
-              </Card>
-            )}
-                </div>
+          {currentAgent.customInstructions && (
+            <Card className="p-6">
+              <h3 className="font-semibold mb-3">Agent Instructions & Context</h3>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                {currentAgent.customInstructions}
+              </p>
+            </Card>
+          )}
 
           <Card className="p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
