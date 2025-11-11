@@ -41,10 +41,12 @@ export default function AgentsPage() {
   const [newAgentSubheader, setNewAgentSubheader] = useState('');
   const [testingAgentId, setTestingAgentId] = useState<string | null>(null);
 
-  const selectedAgent = agentConfigs.find((a) => a.id === selectedAgentId);
-  const testingAgent = agentConfigs.find((a) => a.id === testingAgentId);
+  const visibleAgents = agentConfigs.filter((agent) => !agent.isVersionOnly);
 
-  const filteredAgents = agentConfigs.filter((agent) => {
+  const selectedAgent = visibleAgents.find((a) => a.id === selectedAgentId);
+  const testingAgent = visibleAgents.find((a) => a.id === testingAgentId);
+
+  const filteredAgents = visibleAgents.filter((agent) => {
     if (searchQuery) {
       return agent.name.toLowerCase().includes(searchQuery.toLowerCase());
     }

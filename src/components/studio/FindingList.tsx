@@ -41,9 +41,9 @@ const severityConfig = {
   },
   [ReadinessSeverity.Info]: {
     icon: Info,
-    label: 'Quick Fix',
+    label: 'Quick Win',
     color: 'text-blue-600',
-    bgColor: 'bg-blue-100',
+    bgColor: 'bg-blue-50',
     borderColor: 'border-blue-200',
   },
 };
@@ -188,11 +188,6 @@ export function FindingList({ findings }: FindingListProps) {
             <Icon className={cn('h-4 w-4', config.color)} />
           </div>
           <div className="flex-1 min-w-0">
-            {breadcrumb && (
-              <div className="text-[11px] text-muted-foreground mb-1 font-mono truncate">
-                {breadcrumb}
-              </div>
-            )}
             <div className="flex items-center gap-2 mb-1">
               <Badge variant="outline" className={cn('text-xs', config.color)}>
                 {config.label}
@@ -201,7 +196,14 @@ export function FindingList({ findings }: FindingListProps) {
                 Impact: {finding.severity === ReadinessSeverity.Info ? 'Quality' : 'Accuracy'}
               </span>
             </div>
-            <h4 className="font-medium text-sm">{finding.title}</h4>
+            <div className="flex items-center gap-2">
+              <h4 className="font-medium text-sm truncate">{finding.title}</h4>
+              {breadcrumb && (
+                <div className="text-[11px] text-muted-foreground font-mono truncate">
+                  {breadcrumb}
+                </div>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground mt-2">
               {finding.recommendation}
             </p>
@@ -230,7 +232,7 @@ export function FindingList({ findings }: FindingListProps) {
         <Info className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
         <h3 className="text-lg font-semibold mb-2">No Issues Found</h3>
         <p className="text-sm text-muted-foreground">
-          Your model is in great shape! No recommendations at this time.
+          Your model is in great shape! No quick wins at this time.
         </p>
       </Card>
     );

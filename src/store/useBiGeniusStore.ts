@@ -95,7 +95,13 @@ export const useBiGeniusStore = create<BiGeniusStore>((set, get) => ({
     [warehouseAnalyzerRun.modelId, warehouseAnalyzerRun],
     [docsAnalyzerRun.modelId, docsAnalyzerRun],
   ]),
-  agentConfigs: [...agentConfigs],
+  agentConfigs: agentConfigs.length === 1
+    ? [{
+        ...agentConfigs[0],
+        status: AgentStatus.Live,
+        publishedAt: agentConfigs[0].publishedAt ?? new Date().toISOString(),
+      }]
+    : [...agentConfigs],
   instructionHistory: [...mockInstructionHistory],
   
   // Initial UI state
@@ -218,6 +224,7 @@ export const useBiGeniusStore = create<BiGeniusStore>((set, get) => ({
       visibilityOverrides: original.visibilityOverrides
         ? JSON.parse(JSON.stringify(original.visibilityOverrides))
         : undefined,
+      isVersionOnly: true,
     };
     
     set((state) => ({

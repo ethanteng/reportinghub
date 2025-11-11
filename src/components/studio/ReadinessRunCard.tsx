@@ -28,7 +28,7 @@ export function ReadinessRunCard({ analyzerRun, onRun, onRescan }: ReadinessRunC
             <h3 className="text-lg font-semibold mb-2">Run AI Readiness Analysis</h3>
             <p className="text-sm text-muted-foreground max-w-md">
               Analyze your semantic model for AI readiness. This will check for common issues
-              that may affect query accuracy and provide recommendations.
+              that may affect query accuracy and provide quick wins.
             </p>
           </div>
           <Button onClick={onRun} size="lg">
@@ -146,84 +146,35 @@ export function ReadinessRunCard({ analyzerRun, onRun, onRescan }: ReadinessRunC
             </div>
           </div>
 
-          {/* Total Findings with Impact */}
+          {/* Total Findings */}
           <div className="p-6 rounded-lg border bg-muted">
+            <div className="text-sm font-medium text-muted-foreground mb-2">Total Findings</div>
+            <div className="text-5xl font-bold mb-3">{totalIssues}</div>
             {totalIssues > 0 ? (
-              <div className="flex gap-6">
-                {/* Left side - Finding count and breakdown */}
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-muted-foreground mb-2">Total Findings</div>
-                  <div className="text-5xl font-bold mb-3">{totalIssues}</div>
-                  <div className="space-y-1 text-xs text-muted-foreground">
-                    {blockerCount > 0 && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-red-500" />
-                        <span>{blockerCount} blocker{blockerCount !== 1 ? 's' : ''}</span>
-                      </div>
-                    )}
-                    {warningCount > 0 && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                        <span>{warningCount} warning{warningCount !== 1 ? 's' : ''}</span>
-                      </div>
-                    )}
-                    {infoCount > 0 && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-blue-500" />
-                        <span>{infoCount} recommendation{infoCount !== 1 ? 's' : ''}</span>
-                      </div>
-                    )}
+              <div className="space-y-1 text-xs text-muted-foreground">
+                {blockerCount > 0 && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-red-500" />
+                    <span>{blockerCount} blocker{blockerCount !== 1 ? 's' : ''}</span>
                   </div>
-                </div>
-
-                {/* Right side - Point calculation */}
-                <div className="flex-shrink-0 pl-6 border-l border-border">
-                  <div className="text-xs font-medium text-muted-foreground mb-3">Point Impact</div>
-                  <div className="space-y-1 text-xs font-mono">
-                    <div className="flex justify-between gap-4 text-muted-foreground">
-                      <span>Current:</span>
-                      <span className="font-semibold">{score}</span>
-                    </div>
-                    {blockerCount > 0 && (
-                      <div className="flex justify-between gap-4 text-red-600">
-                        <span>{blockerCount} × +5</span>
-                        <span className="font-semibold">+{blockerCount * 5}</span>
-                      </div>
-                    )}
-                    {warningCount > 0 && (
-                      <div className="flex justify-between gap-4 text-yellow-600">
-                        <span>{warningCount} × +3</span>
-                        <span className="font-semibold">+{warningCount * 3}</span>
-                      </div>
-                    )}
-                    {infoCount > 0 && (
-                      <div className="flex justify-between gap-4 text-blue-600">
-                        <span>{infoCount} × +2</span>
-                        <span className="font-semibold">+{infoCount * 2}</span>
-                      </div>
-                    )}
-                    <div className="border-t border-border pt-1 mt-2">
-                      <div className="flex justify-between gap-4">
-                        <span className="font-semibold">Potential:</span>
-                        <span className="text-lg font-bold text-green-600">{potentialScore}</span>
-                      </div>
-                      {potentialScore > score && (
-                        <div className="text-right text-green-600 font-semibold mt-0.5">
-                          +{potentialScore - score} pts
-                        </div>
-                      )}
-                    </div>
+                )}
+                {warningCount > 0 && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                    <span>{warningCount} warning{warningCount !== 1 ? 's' : ''}</span>
                   </div>
-                </div>
+                )}
+                {infoCount > 0 && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                    <span>{infoCount} quick win{infoCount !== 1 ? 's' : ''}</span>
+                  </div>
+                )}
               </div>
             ) : (
-              <div>
-                <div className="text-sm font-medium text-muted-foreground mb-2">Total Findings</div>
-                <div className="text-5xl font-bold mb-2">{totalIssues}</div>
-                <div className="text-xs text-muted-foreground">
-                  No issues found! 🎉
-                </div>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                No quick wins found! 🎉
+              </p>
             )}
           </div>
         </div>

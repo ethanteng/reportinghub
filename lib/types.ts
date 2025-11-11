@@ -165,4 +165,5 @@ export interface AgentConfig {
   // denormalized snapshot for portability
   instructionIds: ID[];
   sourceIds: ID[];
+  isVersionOnly?: boolean;
 }

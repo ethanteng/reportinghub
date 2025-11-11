@@ -12,7 +12,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
-import { DataSourceType } from '../../../lib/types';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { AgentStatus, DataSourceType } from '../../../lib/types';
 import { toast } from 'sonner';
 
 const iconMap = {
@@ -32,6 +41,10 @@ function ModelPageContent() {
     getCurrentAgent,
     updateAgentConfig,
     getAnalyzerRunForModel,
+    agentConfigs,
+    currentAgentId,
+    setCurrentAgentId,
+    cloneAgentConfig,
   } = useBiGeniusStore();
   const [filterWithInstructions, setFilterWithInstructions] = useState(false);
   const [initialExpandedModels, setInitialExpandedModels] = useState<Set<string>>();
@@ -39,6 +52,8 @@ function ModelPageContent() {
   const [showTestChat, setShowTestChat] = useState(false);
   const [editingInstructions, setEditingInstructions] = useState(false);
   const [instructionsText, setInstructionsText] = useState('');
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
   
   // Get the current agent config to see which sources are connected
   const currentAgent = getCurrentAgent();
@@ -57,6 +72,9 @@ function ModelPageContent() {
   const analyzerRun = primaryModel ? getAnalyzerRunForModel(primaryModel.id) : null;
   const aiNarrative =
     analyzerRun?.summary?.narrative?.trim() || primaryModel?.description?.trim() || '';
+  const relatedConfigs = primaryModel
+    ? agentConfigs.filter((config) => config.modelId === primaryModel.id)
+    : agentConfigs;
 
   // Initialize instructions text when agent loads
   useEffect(() => {
@@ -64,6 +82,18 @@ function ModelPageContent() {
       setInstructionsText(currentAgent.customInstructions || '');
     }
   }, [currentAgent]);
+
+  useEffect(() => {
+    if (primaryModel && relatedConfigs.length === 1) {
+      const singleConfig = relatedConfigs[0];
+      if (singleConfig.status !== AgentStatus.Live) {
+        updateAgentConfig(singleConfig.id, {
+          status: AgentStatus.Live,
+          publishedAt: singleConfig.publishedAt ?? new Date().toISOString(),
+        });
+      }
+    }
+  }, [primaryModel, relatedConfigs, updateAgentConfig]);
 
   const handleSaveInstructions = () => {
     if (currentAgent) {
@@ -78,6 +108,56 @@ function ModelPageContent() {
   const handleCancelEdit = () => {
     setInstructionsText(currentAgent?.customInstructions || '');
     setEditingInstructions(false);
+  };
+
+  const handleSetPrimary = (configId: string) => {
+    if (!primaryModel) return;
+    const targetConfig = agentConfigs.find((config) => config.id === configId);
+    if (!targetConfig) return;
+
+    relatedConfigs.forEach((config) => {
+      if (config.id === configId) {
+        updateAgentConfig(config.id, {
+          status: AgentStatus.Live,
+          publishedAt: new Date().toISOString(),
+        });
+      } else if (config.status === AgentStatus.Live) {
+        updateAgentConfig(config.id, {
+          status: AgentStatus.Draft,
+          publishedAt: undefined,
+        });
+      }
+    });
+
+    setCurrentAgentId(configId as any);
+    toast.success(`${targetConfig.name} set as primary`);
+  };
+
+  const handleDuplicate = (configId: string) => {
+    const clone = cloneAgentConfig(configId as any);
+    toast.success(`Created ${clone.name}`);
+  };
+
+  const handleSelectConfig = (configId: string) => {
+    setCurrentAgentId(configId as any);
+  };
+
+  const handleOpenRename = () => {
+    if (!currentAgent) return;
+    setRenameValue(currentAgent.name);
+    setRenameDialogOpen(true);
+  };
+
+  const handleRenameSave = () => {
+    if (!currentAgent) return;
+    const trimmed = renameValue.trim();
+    if (!trimmed) {
+      toast.error('Name cannot be empty');
+      return;
+    }
+    updateAgentConfig(currentAgent.id, { name: trimmed });
+    toast.success('Model name updated');
+    setRenameDialogOpen(false);
   };
 
   // Handle navigation from findings - expand tree and select entity
@@ -167,17 +247,78 @@ function ModelPageContent() {
       <div className="border-b bg-blue-50/50 sticky top-0 z-10">
         <div className="px-6 py-4 bg-background border-b">
           <div className="flex items-start justify-between gap-4">
-            <div>
+            <div className="flex-1">
               <h1 className="text-2xl font-semibold">Semantic Models & Instructions</h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Browse model structures, manage instructions, and configure guidance for the AI agent
               </p>
+              {currentAgent && (
+                <div className="mt-3 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-semibold text-foreground">
+                      {currentAgent.name}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={handleOpenRename}
+                    >
+                      <Edit3 className="mr-1.5 h-3.5 w-3.5" />
+                      Rename
+                    </Button>
+                  </div>
+                  {aiNarrative && (
+                    <Card className="border-primary/25 bg-primary/5">
+                      <div className="flex items-start gap-3 p-4">
+                        <div className="rounded-md bg-primary/10 p-2 text-primary">
+                          <Sparkles className="h-4 w-4" />
+                        </div>
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-semibold text-primary">AI Interpretation</h3>
+                          <p className="text-sm text-muted-foreground whitespace-pre-line">
+                            {aiNarrative}
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+                  {connectedSources.length > 0 && (
+                    <div>
+                      <div className="text-xs font-medium text-muted-foreground mb-2">
+                        Connected Data Sources ({connectedSources.length})
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {connectedSources.map((source) => {
+                          const Icon = iconMap[source.type];
+                          return (
+                            <Badge key={source.id} variant="secondary" className="gap-2">
+                              <Icon className="h-3 w-3" />
+                              {source.alias || source.name}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             {currentAgent && (
-              <Button onClick={() => setShowTestChat(true)} variant="outline">
-                <Play className="h-4 w-4 mr-2" />
-                Test Agent
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button onClick={() => setShowTestChat(true)} variant="outline">
+                  <Play className="h-4 w-4 mr-2" />
+                  Test Agent
+                </Button>
+                <Button
+                  onClick={() => handleSetPrimary(currentAgent.id)}
+                  size="sm"
+                  variant={currentAgent.status === AgentStatus.Live ? 'secondary' : 'default'}
+                  disabled={currentAgent.status === AgentStatus.Live}
+                >
+                  {currentAgent.status === AgentStatus.Live ? 'Primary' : 'Set as Primary'}
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -230,51 +371,16 @@ function ModelPageContent() {
               </div>
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground bg-background rounded p-3 border">
+            <div
+              className="text-sm text-muted-foreground bg-background rounded p-3 border cursor-text select-text"
+              onClick={() => setEditingInstructions(true)}
+            >
               {instructionsText || (
                 <span className="italic">No agent instructions set. Click Edit to add guidance for this AI agent.</span>
               )}
             </div>
           )}
         </div>
-
-        {aiNarrative && (
-          <div className="px-6 pb-4">
-            <Card className="border-primary/25 bg-primary/5">
-              <div className="flex items-start gap-3 p-4">
-                <div className="rounded-md bg-primary/10 p-2 text-primary">
-                  <Sparkles className="h-4 w-4" />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-sm font-semibold text-primary">AI Interpretation</h3>
-                  <p className="text-sm text-muted-foreground whitespace-pre-line">
-                    {aiNarrative}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {/* Connected Data Sources */}
-        {connectedSources.length > 0 && (
-          <div className="px-6 pb-4">
-            <div className="text-xs font-medium text-muted-foreground mb-2">
-              Connected Data Sources ({connectedSources.length})
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {connectedSources.map((source) => {
-                const Icon = iconMap[source.type];
-                return (
-                  <Badge key={source.id} variant="secondary" className="gap-2">
-                    <Icon className="h-3 w-3" />
-                    {source.alias || source.name}
-                  </Badge>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Content */}
@@ -297,6 +403,31 @@ function ModelPageContent() {
           onClose={() => setShowTestChat(false)}
         />
       )}
+
+      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Model Version</DialogTitle>
+            <DialogDescription>
+              Update the display name for this semantic model configuration.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Input
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              placeholder="Enter model name"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRenameSave}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

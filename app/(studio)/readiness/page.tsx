@@ -167,13 +167,13 @@ export default function ReadinessPage() {
             onRescan={handleRunAnalysis}
           />
 
-          {/* Recommendations */}
+          {/* Quick Wins */}
           {readinessScore > 0 && readinessScore < 80 && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-              <h3 className="font-semibold text-yellow-900 mb-2">Recommendations</h3>
+              <h3 className="font-semibold text-yellow-900 mb-2">Quick Wins</h3>
               <ul className="text-sm text-yellow-700 space-y-1 list-disc list-inside">
                 <li>Your readiness score is below 80. Consider addressing findings first.</li>
-                <li>Review and apply recommendations from the Readiness analysis.</li>
+                <li>Review and apply quick wins from the readiness analysis.</li>
                 <li>Add more instructions to improve query accuracy.</li>
               </ul>
             </div>
