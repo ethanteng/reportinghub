@@ -112,7 +112,7 @@ export function AdminSidebar() {
   return (
     <aside className="w-64 border-r bg-muted/40 flex flex-col">
       <div className="flex h-16 items-center border-b px-6">
-        <h2 className="text-lg font-semibold">Admin Settings</h2>
+        <h2 className="text-lg font-semibold">App Settings</h2>
       </div>
       <nav className="flex-1 overflow-y-auto p-4 space-y-1">
         {navigation.map((item) => {
