@@ -23,6 +23,25 @@ export interface Invoice {
   status: 'Paid' | 'Failed' | 'Upcoming';
 }
 
+export interface Service {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  duration?: string;
+}
+
+export interface PurchasedService {
+  id: string;
+  serviceId: string;
+  startDate: string;
+  expiresOn: string | null;
+  licenseType: string;
+  subscriptionType: string;
+  paymentTerm: string;
+  totalPayment: number;
+}
+
 export const billingSummary: BillingSummary = {
   plan: 'Commercial',
   renewalDate: '2025-12-01',
@@ -51,4 +70,45 @@ export const invoices: Invoice[] = [
   { id: 'inv_3', date: '2025-08-01', amount: 1299, status: 'Paid' },
   { id: 'inv_4', date: '2025-12-01', amount: 1299, status: 'Upcoming' },
 ];
+
+export const services: Service[] = [
+  {
+    id: 'svc_1',
+    name: 'Professional Services - 2 hour block',
+    price: 500.00,
+  },
+  {
+    id: 'svc_2',
+    name: 'Professional Services - 4 hour block',
+    price: 800.00,
+  },
+  {
+    id: 'svc_3',
+    name: 'Professional Services - 8 hour block',
+    price: 1600.00,
+  },
+  {
+    id: 'svc_4',
+    name: 'Guided Pilot Program',
+    price: 4500.00,
+  },
+];
+
+export const purchasedServices: PurchasedService[] = [
+  {
+    id: 'psvc_1',
+    serviceId: 'svc_3',
+    startDate: '2025-09-10',
+    expiresOn: null,
+    licenseType: 'Professional Services - 8 hour block',
+    subscriptionType: 'Service',
+    paymentTerm: 'One Time',
+    totalPayment: 0.00,
+  },
+];
+
+
+
+
+
 
