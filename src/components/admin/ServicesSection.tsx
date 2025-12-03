@@ -164,7 +164,7 @@ export function ServicesSection({ services, purchasedServices }: ServicesSection
                     htmlFor="terms-checkbox"
                     className="text-xs text-muted-foreground cursor-pointer"
                   >
-                    By checking this box, you agree to the Reporting Hub's{' '}
+                    By checking this box, you agree to the Reporting Hub&apos;s{' '}
                     <Link href="#" className="text-primary hover:underline">
                       terms and conditions
                     </Link>
