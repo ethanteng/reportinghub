@@ -33,7 +33,7 @@ export default function PlansAddOnsPage() {
         <AccordionSection
           title="Plans"
           description="Seats and tenants included in your subscription"
-          defaultOpen={true}
+          defaultOpen={false}
         >
           <div className="space-y-4">
             <div className="flex items-center justify-between">
