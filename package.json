@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "setup": "./scripts/setup.sh",
-    "clean": "rm -rf .next node_modules package-lock.json && npm install"
+    "clean": "rm -rf node_modules .next dist build out coverage .cache .parcel-cache .eslintcache *.tsbuildinfo *.log",
+    "reset": "npm run clean && npm install",
+    "rebuild": "npm run clean && npm install && npm run build"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.14",
