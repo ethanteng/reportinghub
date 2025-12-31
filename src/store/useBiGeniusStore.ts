@@ -82,6 +82,10 @@ interface BiGeniusStore {
   isColumnIncluded: (modelId: ID, tableId: ID, columnId: ID) => boolean;
   setTableInclusion: (modelId: ID, tableId: ID, included: boolean) => void;
   setColumnInclusion: (modelId: ID, tableId: ID, columnId: ID, included: boolean) => void;
+
+  // Smart Select helpers
+  getSmartSelectSummary: (agentId: ID) => { includedTables: number; includedColumns: number } | null;
+  isCurrentVersionLive: () => boolean;
 }
 
 export const useBiGeniusStore = create<BiGeniusStore>((set, get) => ({
@@ -210,12 +214,11 @@ export const useBiGeniusStore = create<BiGeniusStore>((set, get) => ({
     const original = state.agentConfigs.find((config) => config.id === id);
     if (!original) throw new Error('Agent not found');
     
-    const versionNum = parseInt(original.versionTag.replace('v', ''), 10);
     const clone: AgentConfig = {
       ...original,
       id: `config_${Date.now()}` as ID,
       name: `${original.name} (Copy)`,
-      versionTag: `v${versionNum + 1}`,
+      versionTag: `${original.versionTag} (copy)`,
       status: AgentStatus.Draft,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -408,6 +411,41 @@ export const useBiGeniusStore = create<BiGeniusStore>((set, get) => ({
     });
 
     set({ agentConfigs: updatedAgentConfigs });
+  },
+
+  getSmartSelectSummary: (agentId) => {
+    const state = get();
+    const agent = state.agentConfigs.find((config) => config.id === agentId);
+    if (!agent) return null;
+
+    const model = state.models.find((m) => m.id === agent.modelId);
+    if (!model) return null;
+
+    const overrides = agent.visibilityOverrides?.[model.id];
+    const excludedTableIds = new Set(overrides?.excludedTableIds ?? []);
+    const excludedColumnIds = new Set(overrides?.excludedColumnIds ?? []);
+
+    let includedTables = 0;
+    let includedColumns = 0;
+
+    model.tables.forEach((table) => {
+      if (!excludedTableIds.has(table.id)) {
+        includedTables++;
+        table.columns.forEach((column) => {
+          if (!excludedColumnIds.has(column.id)) {
+            includedColumns++;
+          }
+        });
+      }
+    });
+
+    return { includedTables, includedColumns };
+  },
+
+  isCurrentVersionLive: () => {
+    const state = get();
+    const agent = state.getCurrentAgent();
+    return agent?.status === AgentStatus.Live;
   },
 }));
 

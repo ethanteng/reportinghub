@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/card';
 import { SummaryCard } from '@/components/studio/SummaryCard';
 import { EmptyState } from '@/components/studio/EmptyState';
 import { AgentChatWidget } from '@/components/studio/AgentChatWidget';
+import { VersionContext } from '@/components/studio/VersionContext';
+import { SmartSelectSummary } from '@/components/studio/SmartSelectSummary';
 import { useBiGeniusStore } from '@/store/useBiGeniusStore';
 import { toast } from 'sonner';
 import {
@@ -29,6 +31,7 @@ import type {
   Table as SemanticTable,
   Column as SemanticColumn,
 } from '../../../lib/types';
+import { AgentStatus } from '../../../lib/types';
 
 type HiddenColumnMeta = {
   table: SemanticTable;
@@ -65,7 +68,7 @@ const formatListPreview = (values: string[]) => {
 };
 
 export default function SummaryPage() {
-  const { models, dataSources, getAnalyzerRunForModel, getCurrentAgent } =
+  const { models, dataSources, getAnalyzerRunForModel, getCurrentAgent, agentConfigs, updateAgentConfig, getSmartSelectSummary } =
     useBiGeniusStore();
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
@@ -336,16 +339,35 @@ export default function SummaryPage() {
   }
 
   const handlePublish = async () => {
+    if (!currentAgent) return;
+    
     setIsPublishing(true);
     toast.loading('Publishing agent...', { id: 'publish' });
 
+    // Set this version as Live and mark others as Draft
+    const relatedConfigs = agentConfigs.filter((config) => config.modelId === currentAgent.modelId);
+    
+    relatedConfigs.forEach((config) => {
+      if (config.id === currentAgent.id) {
+        updateAgentConfig(config.id, {
+          status: AgentStatus.Live,
+          publishedAt: new Date().toISOString(),
+        });
+      } else if (config.status === AgentStatus.Live) {
+        updateAgentConfig(config.id, {
+          status: AgentStatus.Draft,
+          publishedAt: undefined,
+        });
+      }
+    });
+
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    const mockUrl = `https://bi-genius.example.com/agents/${model.id}`;
+    const mockUrl = `https://bi-genius.example.com/agents/${currentAgent.id}`;
     setPublishedUrl(mockUrl);
     setIsPublishing(false);
 
-    toast.success('Agent published successfully!', { id: 'publish' });
+    toast.success('Version published successfully! This version is now Live.', { id: 'publish' });
   };
 
   return (
@@ -359,6 +381,9 @@ export default function SummaryPage() {
                 Review configuration, schema visibility, and AI interpretation
                 before publishing.
               </p>
+              <div className="mt-3">
+                <VersionContext />
+              </div>
             </div>
             <div className="flex gap-2">
               <Button
@@ -369,10 +394,6 @@ export default function SummaryPage() {
                 <Play className="h-4 w-4 mr-2" />
                 Test Agent
               </Button>
-              <Button onClick={handlePublish} size="lg" disabled={isPublishing}>
-                <Rocket className="h-4 w-4 mr-2" />
-                {isPublishing ? 'Publishing...' : 'Publish Agent'}
-              </Button>
             </div>
           </div>
         </div>
@@ -380,6 +401,57 @@ export default function SummaryPage() {
 
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-5xl mx-auto space-y-8">
+          {/* Version Summary Card */}
+          <Card className="p-6">
+            <h3 className="font-semibold mb-4">Version Summary</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <div className="text-xs text-muted-foreground mb-1">Data Sources</div>
+                <div className="text-2xl font-semibold">{connectedSources.length}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground mb-1">Smart Select</div>
+                {currentAgent && (() => {
+                  const summary = getSmartSelectSummary(currentAgent.id);
+                  return summary ? (
+                    <div className="text-sm font-semibold">
+                      {summary.includedTables} tables, {summary.includedColumns} columns
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">—</div>
+                  );
+                })()}
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground mb-1">Readiness Score</div>
+                <div className="text-2xl font-semibold">{readinessScore}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground mb-1">Instructions</div>
+                <div className="text-2xl font-semibold">{visibilityTotals.visibleInstructions}</div>
+              </div>
+            </div>
+            {currentAgent && currentAgent.status === AgentStatus.Live && (
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="text-sm font-medium text-green-900">
+                  ✓ This version is currently Live
+                </div>
+              </div>
+            )}
+            {currentAgent && currentAgent.status !== AgentStatus.Live && (
+              <div className="mt-4">
+                <Button
+                  onClick={handlePublish}
+                  disabled={isPublishing}
+                  className="w-full"
+                >
+                  <Rocket className="h-4 w-4 mr-2" />
+                  {isPublishing ? 'Publishing...' : 'Publish This Version'}
+                </Button>
+              </div>
+            )}
+          </Card>
+
           {currentAgent.customInstructions && (
             <Card className="p-6">
               <h3 className="font-semibold mb-3">Agent Instructions & Context</h3>

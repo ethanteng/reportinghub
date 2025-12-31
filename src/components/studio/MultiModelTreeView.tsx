@@ -18,6 +18,7 @@ interface MultiModelTreeViewProps {
   onFilterChange?: (checked: boolean) => void;
   initialExpandedModels?: Set<string>;
   initialExpandedTables?: Set<string>;
+  mode?: 'browse' | 'smart-select';
 }
 
 export function MultiModelTreeView({
@@ -27,6 +28,7 @@ export function MultiModelTreeView({
   onFilterChange,
   initialExpandedModels,
   initialExpandedTables,
+  mode = 'browse',
 }: MultiModelTreeViewProps) {
   const [expandedModels, setExpandedModels] = useState<Set<string>>(initialExpandedModels || new Set());
   const [expandedTables, setExpandedTables] = useState<Set<string>>(initialExpandedTables || new Set());
@@ -151,9 +153,9 @@ export function MultiModelTreeView({
   });
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col flex-1 min-h-0">
       {/* Toolbar */}
-      <div className="border-b">
+      <div className="border-b flex-shrink-0">
         <div className="p-4 space-y-3">
           <Input
             placeholder="Search tables and columns... (⌘K)"
@@ -171,23 +173,25 @@ export function MultiModelTreeView({
                 Collapse All
               </Button>
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="filter-instructions"
-                checked={filterWithInstructions}
-                onCheckedChange={(checked) => onFilterChange?.(checked as boolean)}
-              />
-              <Label htmlFor="filter-instructions" className="text-sm cursor-pointer">
-                Show only items with instructions
-              </Label>
-            </div>
+            {mode === 'browse' && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="filter-instructions"
+                  checked={filterWithInstructions}
+                  onCheckedChange={(checked) => onFilterChange?.(checked as boolean)}
+                />
+                <Label htmlFor="filter-instructions" className="text-sm cursor-pointer">
+                  Show only items with instructions
+                </Label>
+              </div>
+            )}
           </div>
         </div>
         <Breadcrumbs selectedEntity={selectedEntity} />
       </div>
 
       {/* Tree */}
-      <div className="flex-1 overflow-y-auto p-4" role="tree" aria-label="Data models structure">
+      <div className="flex-1 overflow-y-auto p-4 min-h-0" role="tree" aria-label="Data models structure">
         {filteredModels.map((model) => {
           const isModelExpanded = expandedModels.has(model.id);
 
@@ -224,9 +228,16 @@ export function MultiModelTreeView({
                     <Brain className="h-3 w-3 text-purple-500 flex-shrink-0" />
                   </span>
                 )}
-                <span className="ml-auto flex justify-center w-28 text-[11px] uppercase tracking-wide text-muted-foreground text-center whitespace-nowrap">
-                  Visible to agent
-                </span>
+                {mode === 'smart-select' && (
+                  <span className="ml-auto flex justify-center w-28 text-[11px] uppercase tracking-wide text-muted-foreground text-center whitespace-nowrap">
+                    Include/Exclude
+                  </span>
+                )}
+                {mode === 'browse' && (
+                  <span className="ml-auto flex justify-center w-28 text-[11px] uppercase tracking-wide text-muted-foreground text-center whitespace-nowrap">
+                    Visible to agent
+                  </span>
+                )}
               </div>
 
               {/* Tables */}
@@ -271,31 +282,41 @@ export function MultiModelTreeView({
                                 <Brain className="h-3 w-3 text-purple-500 flex-shrink-0" />
                               </span>
                             )}
-                            <div
-                              className="ml-auto flex items-center justify-center gap-1 w-28"
-                              onClick={(event) => event.stopPropagation()}
-                            >
-                              <span
-                                className={cn(
-                                  'inline-flex h-3.5 w-3.5 items-center justify-center text-muted-foreground',
-                                  tableIncluded ? 'opacity-0' : 'opacity-100'
-                                )}
-                                role={tableIncluded ? undefined : 'img'}
-                                aria-label={tableIncluded ? undefined : 'Hidden from agent'}
-                                aria-hidden={tableIncluded ? true : undefined}
+                            {(mode === 'smart-select' || !tableIncluded) && (
+                              <div
+                                className="ml-auto flex items-center justify-center gap-1 w-28"
+                                onClick={(event) => event.stopPropagation()}
                               >
-                                <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
-                              </span>
-                              <Checkbox
-                                checked={tableIncluded}
-                                onCheckedChange={(checked) =>
-                                  setTableInclusion(model.id, table.id, checked === true)
-                                }
-                                aria-label="Visible to agent"
-                                title="Visible to agent"
-                                disabled={!currentAgent}
-                              />
-                            </div>
+                                {mode === 'smart-select' && !tableIncluded && (
+                                  <span
+                                    className="inline-flex h-3.5 w-3.5 items-center justify-center text-muted-foreground opacity-100"
+                                    role="img"
+                                    aria-label="Hidden from agent"
+                                  >
+                                    <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
+                                  </span>
+                                )}
+                                {mode === 'browse' && !tableIncluded && (
+                                  <span
+                                    className="inline-flex h-3.5 w-3.5 items-center justify-center text-muted-foreground opacity-100"
+                                    role="img"
+                                    aria-label="Hidden from agent"
+                                  >
+                                    <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
+                                  </span>
+                                )}
+                                <Checkbox
+                                  checked={tableIncluded}
+                                  onCheckedChange={(checked) =>
+                                    setTableInclusion(model.id, table.id, checked === true)
+                                  }
+                                  aria-label="Visible to agent"
+                                  title="Visible to agent"
+                                  disabled={!currentAgent}
+                                  className={mode === 'smart-select' ? '' : ''}
+                                />
+                              </div>
+                            )}
                           </div>
 
                           {/* Columns */}
@@ -333,31 +354,40 @@ export function MultiModelTreeView({
                                             <Brain className="h-3 w-3 text-purple-500 flex-shrink-0" />
                                           </span>
                                         )}
-                                      <div
-                                        className="ml-auto flex items-center justify-center gap-1 w-28"
-                                        onClick={(event) => event.stopPropagation()}
-                                      >
-                                        <span
-                                          className={cn(
-                                            'inline-flex h-3.5 w-3.5 items-center justify-center text-muted-foreground',
-                                            columnIncluded ? 'opacity-0' : 'opacity-100'
-                                          )}
-                                          role={columnIncluded ? undefined : 'img'}
-                                          aria-label={columnIncluded ? undefined : 'Hidden from agent'}
-                                          aria-hidden={columnIncluded ? true : undefined}
+                                      {(mode === 'smart-select' || !columnIncluded) && (
+                                        <div
+                                          className="ml-auto flex items-center justify-center gap-1 w-28"
+                                          onClick={(event) => event.stopPropagation()}
                                         >
-                                          <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
-                                        </span>
-                                        <Checkbox
-                                          checked={columnIncluded}
-                                          onCheckedChange={(checked) =>
-                                            setColumnInclusion(model.id, table.id, column.id, checked === true)
-                                          }
-                                          aria-label="Visible to agent"
-                                          title="Visible to agent"
-                                          disabled={!currentAgent || !tableIncluded}
-                                        />
-                                      </div>
+                                          {mode === 'smart-select' && !columnIncluded && (
+                                            <span
+                                              className="inline-flex h-3.5 w-3.5 items-center justify-center text-muted-foreground opacity-100"
+                                              role="img"
+                                              aria-label="Hidden from agent"
+                                            >
+                                              <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
+                                            </span>
+                                          )}
+                                          {mode === 'browse' && !columnIncluded && (
+                                            <span
+                                              className="inline-flex h-3.5 w-3.5 items-center justify-center text-muted-foreground opacity-100"
+                                              role="img"
+                                              aria-label="Hidden from agent"
+                                            >
+                                              <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
+                                            </span>
+                                          )}
+                                          <Checkbox
+                                            checked={columnIncluded}
+                                            onCheckedChange={(checked) =>
+                                              setColumnInclusion(model.id, table.id, column.id, checked === true)
+                                            }
+                                            aria-label="Visible to agent"
+                                            title="Visible to agent"
+                                            disabled={!currentAgent || !tableIncluded}
+                                          />
+                                        </div>
+                                      )}
                                     </div>
                                   );
                                 })}

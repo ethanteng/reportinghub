@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { SourceCard } from '@/components/studio/SourceCard';
 import { EmptyState } from '@/components/studio/EmptyState';
 import { AddDataSourceDialog } from '@/components/studio/AddDataSourceDialog';
+import { VersionContext } from '@/components/studio/VersionContext';
 import { useBiGeniusStore } from '@/store/useBiGeniusStore';
 import { syncDataSource } from '../../../lib/mockServices';
 import { toast } from 'sonner';
@@ -174,6 +175,9 @@ export default function DataSourcesPage() {
               <p className="text-sm text-muted-foreground mt-1">
                 Connect and sync your data sources
               </p>
+              <div className="mt-3">
+                <VersionContext />
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {selectedSourceIds.length > 0 ? (

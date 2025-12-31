@@ -1,12 +1,13 @@
 'use client';
 
 import { Suspense, useState } from 'react';
-import { X, AlertCircle, AlertTriangle, Info, Edit3, Check, Plus, Trash2 } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+import { X, AlertCircle, AlertTriangle, Info, Edit3, Check, Plus, Trash2, Filter, EyeOff, Eye } from 'lucide-react';
+import { useSearchParams, usePathname } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useBiGeniusStore, SelectedEntity } from '@/store/useBiGeniusStore';
 import { InstructionEditor } from './InstructionEditor';
 import { InstructionHistoryView } from './InstructionHistory';
@@ -15,11 +16,14 @@ import { toast } from 'sonner';
 
 function InspectorPanelContent() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const { selectedEntity, setInspectorOpen, setSelectedEntity } = useBiGeniusStore();
   
   const recommendation = searchParams.get('recommendation');
   const findingTitle = searchParams.get('findingTitle');
   const severity = searchParams.get('severity') as ReadinessSeverity | null;
+  const tabParam = searchParams.get('tab');
+  const isSmartSelectMode = pathname === '/model' && tabParam === 'smart-select';
 
   if (!selectedEntity) {
     return null;
@@ -99,13 +103,19 @@ function InspectorPanelContent() {
 
           {/* Content */}
           <Tabs 
-            defaultValue={selectedEntity.type === 'source' ? 'summary' : 'instructions'} 
+            defaultValue={isSmartSelectMode && selectedEntity.type !== 'source' ? 'smart-select' : selectedEntity.type === 'source' ? 'summary' : 'instructions'} 
             className="flex-1 flex flex-col overflow-hidden"
           >
             <TabsList className="mx-4 mt-2">
               <TabsTrigger value="summary" className="text-xs">
                 Summary
               </TabsTrigger>
+              {isSmartSelectMode && selectedEntity.type !== 'source' && (
+                <TabsTrigger value="smart-select" className="text-xs">
+                  <Filter className="h-3 w-3 mr-1" />
+                  Smart Select
+                </TabsTrigger>
+              )}
               {selectedEntity.type !== 'source' && (
                 <TabsTrigger value="instructions" className="text-xs">
                   Instructions
@@ -122,6 +132,12 @@ function InspectorPanelContent() {
               <TabsContent value="summary" className="p-4 mt-0">
                 <SummaryTab entity={selectedEntity} />
               </TabsContent>
+
+              {isSmartSelectMode && selectedEntity.type !== 'source' && (
+                <TabsContent value="smart-select" className="p-4 mt-0">
+                  <SmartSelectTab entity={selectedEntity} />
+                </TabsContent>
+              )}
 
               {selectedEntity.type !== 'source' && (
                 <TabsContent value="instructions" className="p-4 mt-0">
@@ -621,6 +637,106 @@ function SummaryTab({ entity }: { entity: NonNullable<SelectedEntity> }) {
               </div>
             </>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+function SmartSelectTab({ entity }: { entity: NonNullable<SelectedEntity> }) {
+  const { isTableIncluded, isColumnIncluded, setTableInclusion, setColumnInclusion, getCurrentAgent } = useBiGeniusStore();
+  const currentAgent = getCurrentAgent();
+
+  if (entity.type === 'model') {
+    return (
+      <div className="space-y-4">
+        <div>
+          <h4 className="text-sm font-semibold mb-2">Smart Select</h4>
+          <p className="text-xs text-muted-foreground">
+            Use Smart Select to control which tables and columns the AI can access. 
+            Exclude irrelevant data to improve performance and reduce costs.
+          </p>
+        </div>
+        <div className="pt-2 border-t">
+          <p className="text-xs text-muted-foreground">
+            Select a table or column to configure its inclusion status.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (entity.type === 'table') {
+    const tableIncluded = isTableIncluded(entity.modelId, entity.data.id);
+    
+    return (
+      <div className="space-y-4">
+        <div>
+          <h4 className="text-sm font-semibold mb-2">Smart Select</h4>
+          <div className="flex items-center gap-2 mb-3">
+            <Checkbox
+              checked={tableIncluded}
+              onCheckedChange={(checked) =>
+                setTableInclusion(entity.modelId, entity.data.id, checked === true)
+              }
+              disabled={!currentAgent}
+            />
+            <label className="text-sm font-medium cursor-pointer" onClick={() => setTableInclusion(entity.modelId, entity.data.id, !tableIncluded)}>
+              Include this table
+            </label>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {tableIncluded 
+              ? 'This table is included. The AI can access all columns in this table (unless individually excluded).'
+              : 'This table is excluded. The AI cannot access any columns in this table.'}
+          </p>
+        </div>
+        {tableIncluded && (
+          <div className="pt-2 border-t">
+            <p className="text-xs text-muted-foreground mb-2">
+              Columns: {entity.data.columns.length} total
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Select individual columns to exclude specific fields while keeping the table included.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (entity.type === 'column') {
+    const columnIncluded = isColumnIncluded(entity.modelId, entity.tableId, entity.data.id);
+    const tableIncluded = isTableIncluded(entity.modelId, entity.tableId);
+    
+    return (
+      <div className="space-y-4">
+        <div>
+          <h4 className="text-sm font-semibold mb-2">Smart Select</h4>
+          <div className="flex items-center gap-2 mb-3">
+            <Checkbox
+              checked={columnIncluded}
+              onCheckedChange={(checked) =>
+                setColumnInclusion(entity.modelId, entity.tableId, entity.data.id, checked === true)
+              }
+              disabled={!currentAgent || !tableIncluded}
+            />
+            <label className="text-sm font-medium cursor-pointer" onClick={() => !(!currentAgent || !tableIncluded) && setColumnInclusion(entity.modelId, entity.tableId, entity.data.id, !columnIncluded)}>
+              Include this column
+            </label>
+          </div>
+          {!tableIncluded && (
+            <p className="text-xs text-yellow-600 mb-2">
+              The parent table is excluded, so this column cannot be included.
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            {columnIncluded 
+              ? 'This column is included. The AI can use this column when answering questions.'
+              : 'This column is excluded. The AI cannot access this column.'}
+          </p>
         </div>
       </div>
     );

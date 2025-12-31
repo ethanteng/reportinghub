@@ -6,13 +6,15 @@ import Link from 'next/link';
 import { MultiModelTreeView } from '@/components/studio/MultiModelTreeView';
 import { EmptyState } from '@/components/studio/EmptyState';
 import { AgentChatWidget } from '@/components/studio/AgentChatWidget';
+import { VersionContext } from '@/components/studio/VersionContext';
 import { useBiGeniusStore } from '@/store/useBiGeniusStore';
-import { Database, Server, FileText, Globe, Network, Play, Edit3, Check, X, Sparkles } from 'lucide-react';
+import { Database, Server, FileText, Globe, Network, Play, Edit3, Check, X, Sparkles, Filter } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -21,7 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { AgentStatus, DataSourceType } from '../../../lib/types';
+import { AgentStatus, DataSourceType, SemanticModel } from '../../../lib/types';
 import { toast } from 'sonner';
 
 const iconMap = {
@@ -30,6 +32,54 @@ const iconMap = {
   [DataSourceType.File]: FileText,
   [DataSourceType.URL]: Globe,
 };
+
+interface SmartSelectViewProps {
+  models: SemanticModel[];
+  initialExpandedModels?: Set<string>;
+  initialExpandedTables?: Set<string>;
+}
+
+function SmartSelectView({ models, initialExpandedModels, initialExpandedTables }: SmartSelectViewProps) {
+  const { getCurrentAgent, getSmartSelectSummary } = useBiGeniusStore();
+  const currentAgent = getCurrentAgent();
+  const summary = currentAgent ? getSmartSelectSummary(currentAgent.id) : null;
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Explanation Banner */}
+      <div className="border-b bg-blue-50/50 px-6 py-3 flex-shrink-0">
+        <div className="flex items-start gap-3">
+          <Filter className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-blue-900 mb-1">Smart Select</h3>
+            <p className="text-sm text-blue-800">
+              Smart Select controls what data the AI can use. Smaller models are faster and cheaper.
+            </p>
+            {summary && (
+              <div className="mt-2">
+                <Badge variant="secondary" className="text-xs">
+                  Smart Select: {summary.includedTables} tables, {summary.includedColumns} columns included
+                </Badge>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Tree View */}
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+        <MultiModelTreeView
+          models={models}
+          showInstructionBadges={false}
+          filterWithInstructions={false}
+          initialExpandedModels={initialExpandedModels}
+          initialExpandedTables={initialExpandedTables}
+          mode="smart-select"
+        />
+      </div>
+    </div>
+  );
+}
 
 function ModelPageContent() {
   const searchParams = useSearchParams();
@@ -46,14 +96,25 @@ function ModelPageContent() {
     setCurrentAgentId,
     cloneAgentConfig,
   } = useBiGeniusStore();
+  
+  // Check for tab query parameter (only smart-select is valid now)
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabParam === 'smart-select' ? 'smart-select' : 'model');
+  
+  // Update tab when query param changes
+  useEffect(() => {
+    if (tabParam === 'smart-select') {
+      setActiveTab('smart-select');
+    } else {
+      setActiveTab('model');
+    }
+  }, [tabParam]);
   const [filterWithInstructions, setFilterWithInstructions] = useState(false);
   const [initialExpandedModels, setInitialExpandedModels] = useState<Set<string>>();
   const [initialExpandedTables, setInitialExpandedTables] = useState<Set<string>>();
   const [showTestChat, setShowTestChat] = useState(false);
   const [editingInstructions, setEditingInstructions] = useState(false);
   const [instructionsText, setInstructionsText] = useState('');
-  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
-  const [renameValue, setRenameValue] = useState('');
   
   // Get the current agent config to see which sources are connected
   const currentAgent = getCurrentAgent();
@@ -142,24 +203,6 @@ function ModelPageContent() {
     setCurrentAgentId(configId as any);
   };
 
-  const handleOpenRename = () => {
-    if (!currentAgent) return;
-    setRenameValue(currentAgent.name);
-    setRenameDialogOpen(true);
-  };
-
-  const handleRenameSave = () => {
-    if (!currentAgent) return;
-    const trimmed = renameValue.trim();
-    if (!trimmed) {
-      toast.error('Name cannot be empty');
-      return;
-    }
-    updateAgentConfig(currentAgent.id, { name: trimmed });
-    toast.success('Model name updated');
-    setRenameDialogOpen(false);
-  };
-
   // Handle navigation from findings - expand tree and select entity
   useEffect(() => {
     const entityType = searchParams.get('entityType');
@@ -244,7 +287,7 @@ function ModelPageContent() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="border-b bg-blue-50/50 sticky top-0 z-10">
+      <div className="border-b bg-blue-50/50 sticky top-0 z-10 bg-background">
         <div className="px-6 py-4 bg-background border-b">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
@@ -252,22 +295,11 @@ function ModelPageContent() {
               <p className="text-sm text-muted-foreground mt-1">
                 Browse model structures, manage instructions, and configure guidance for the AI agent
               </p>
+              <div className="mt-3">
+                <VersionContext />
+              </div>
               {currentAgent && (
                 <div className="mt-3 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-semibold text-foreground">
-                      {currentAgent.name}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs"
-                      onClick={handleOpenRename}
-                    >
-                      <Edit3 className="mr-1.5 h-3.5 w-3.5" />
-                      Rename
-                    </Button>
-                  </div>
                   {aiNarrative && (
                     <Card className="border-primary/25 bg-primary/5">
                       <div className="flex items-start gap-3 p-4">
@@ -309,14 +341,6 @@ function ModelPageContent() {
                 <Button onClick={() => setShowTestChat(true)} variant="outline">
                   <Play className="h-4 w-4 mr-2" />
                   Test Agent
-                </Button>
-                <Button
-                  onClick={() => handleSetPrimary(currentAgent.id)}
-                  size="sm"
-                  variant={currentAgent.status === AgentStatus.Live ? 'secondary' : 'default'}
-                  disabled={currentAgent.status === AgentStatus.Live}
-                >
-                  {currentAgent.status === AgentStatus.Live ? 'Primary' : 'Set as Primary'}
                 </Button>
               </div>
             )}
@@ -384,16 +408,42 @@ function ModelPageContent() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden">
-        <MultiModelTreeView
-          key={treeKey}
-          models={connectedModels}
-          showInstructionBadges={true}
-          filterWithInstructions={filterWithInstructions}
-          onFilterChange={setFilterWithInstructions}
-          initialExpandedModels={initialExpandedModels}
-          initialExpandedTables={initialExpandedTables}
-        />
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0 relative">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden min-h-0">
+          <div className="border-b px-6 flex-shrink-0">
+            <TabsList className="bg-transparent">
+              <TabsTrigger value="model" className="gap-2">
+                <Network className="h-4 w-4" />
+                Model
+              </TabsTrigger>
+              <TabsTrigger value="smart-select" className="gap-2">
+                <Filter className="h-4 w-4" />
+                Smart Select
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="model" className="flex-1 overflow-hidden mt-0 data-[state=active]:flex data-[state=inactive]:hidden flex flex-col min-h-0">
+            <MultiModelTreeView
+              key={treeKey}
+              models={connectedModels}
+              showInstructionBadges={true}
+              filterWithInstructions={filterWithInstructions}
+              onFilterChange={setFilterWithInstructions}
+              initialExpandedModels={initialExpandedModels}
+              initialExpandedTables={initialExpandedTables}
+              mode="browse"
+            />
+          </TabsContent>
+
+          <TabsContent value="smart-select" className="flex-1 overflow-hidden mt-0 data-[state=active]:flex data-[state=inactive]:hidden flex flex-col min-h-0">
+            <SmartSelectView
+              models={connectedModels}
+              initialExpandedModels={initialExpandedModels}
+              initialExpandedTables={initialExpandedTables}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Test Chat Widget */}
@@ -404,30 +454,6 @@ function ModelPageContent() {
         />
       )}
 
-      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rename Model Version</DialogTitle>
-            <DialogDescription>
-              Update the display name for this semantic model configuration.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <Input
-              value={renameValue}
-              onChange={(e) => setRenameValue(e.target.value)}
-              placeholder="Enter model name"
-              autoFocus
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRenameDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleRenameSave}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

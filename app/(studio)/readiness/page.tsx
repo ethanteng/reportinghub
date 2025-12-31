@@ -6,6 +6,7 @@ import { ReadinessRunCard } from '@/components/studio/ReadinessRunCard';
 import { FindingList } from '@/components/studio/FindingList';
 import { EmptyState } from '@/components/studio/EmptyState';
 import { AgentChatWidget } from '@/components/studio/AgentChatWidget';
+import { VersionContext } from '@/components/studio/VersionContext';
 import { useBiGeniusStore } from '@/store/useBiGeniusStore';
 import { runAnalyzer } from '../../../lib/mockServices';
 import { toast } from 'sonner';
@@ -122,29 +123,13 @@ export default function ReadinessPage() {
             <div className="space-y-2">
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-semibold">AI Readiness</h1>
-                {currentAgent && (
-                  <Badge
-                    variant={
-                      currentAgent.status === AgentStatus.Live ? 'default' : 'secondary'
-                    }
-                  >
-                    {currentAgent.status === AgentStatus.Live ? 'Live' : 'Draft'}
-                  </Badge>
-                )}
-                {currentAgent && (
-                  <Badge variant="outline" className="text-xs uppercase">
-                    {currentAgent.versionTag}
-                  </Badge>
-                )}
               </div>
               <p className="text-sm text-muted-foreground">
                 Validate data quality and modelling choices before promoting your agent.
               </p>
-              {currentAgent && (
-                <p className="text-xs text-muted-foreground">
-                  Reviewing: <span className="font-medium">{currentAgent.name}</span>
-                </p>
-              )}
+              <div className="mt-3">
+                <VersionContext />
+              </div>
             </div>
             <div className="flex gap-2">
               {currentAgent && (
