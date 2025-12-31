@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
-import { TenantSwitcher } from './TenantSwitcher'
 import { GroupsTable } from './GroupsTable'
 import { PermissionSetsTable } from './PermissionSetsTable'
 import { ReportAccessMatrix } from './ReportAccessMatrix'
@@ -52,7 +51,6 @@ export function PermissionsHub() {
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <TenantSwitcher />
           <Button 
             variant="outline"
             onClick={() => setGroupRoleWizardOpen(true)}
@@ -70,15 +68,17 @@ export function PermissionsHub() {
       </header>
 
       <Tabs defaultValue="groups" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="reports">Report Access</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2">
+          {/* Report Access tab temporarily hidden */}
+          {/* <TabsTrigger value="reports">Report Access</TabsTrigger> */}
           <TabsTrigger value="groups">Users & Groups</TabsTrigger>
           <TabsTrigger value="sets">Permission Sets</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="reports">
+        {/* Report Access tab content - temporarily hidden */}
+        {/* <TabsContent value="reports">
           <ReportAccessMatrixSidebar tenant={currentTenant} reports={reports} />
-        </TabsContent>
+        </TabsContent> */}
 
         <TabsContent value="groups">
           <GroupsTable tenant={currentTenant} />

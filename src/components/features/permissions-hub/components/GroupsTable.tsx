@@ -406,8 +406,8 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
             )}
           </div>
 
-          {/* Sync Groups Section */}
-          <div className="mt-4 p-4 border rounded-lg bg-muted/50">
+          {/* Sync Groups Section - temporarily hidden */}
+          {/* <div className="mt-4 p-4 border rounded-lg bg-muted/50">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <RefreshCw className="h-4 w-4" />
@@ -451,7 +451,7 @@ export function GroupsTable({ tenant }: GroupsTableProps) {
                 </p>
               </div>
             )}
-          </div>
+          </div> */}
           
           <div className="mt-4 space-y-4">
             {/* Mode-specific header */}

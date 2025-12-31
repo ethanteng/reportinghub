@@ -207,135 +207,28 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
 
     return (
       <div className="space-y-6">
-        {/* Sync Status */}
-        {!hasSynced && !lastGroupSyncTime && (
-          <div className="p-4 border rounded-lg bg-muted/50">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4" />
-                <div>
-                  <span className="font-medium">Sync Groups from Azure AD</span>
-                  {lastGroupSyncTime && (
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Last sync: {lastGroupSyncTime ? (lastGroupSyncTime as Date).toLocaleString() : ''}
-                    </div>
-                  )}
-                </div>
-              </div>
-          <Button
-                onClick={mockSyncGroups} 
-            disabled={isSyncing}
-                size="sm"
-          >
-            {isSyncing ? (
-              <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Syncing...
-              </>
-            ) : (
-                  'Start Sync'
-            )}
-          </Button>
-      </div>
-      
-            {isSyncing && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Syncing groups...</span>
-                  <span>{syncProgress}%</span>
-          </div>
-                <Progress value={syncProgress} className="h-2" />
-                <p className="text-xs text-muted-foreground">
-                  This may take a few moments for large directories
-                </p>
-        </div>
-      )}
-          </div>
-        )}
-
-        {/* Last Sync Info - shown when there's a previous sync but no current session */}
-        {!hasSynced && lastGroupSyncTime && (
-          <div className="p-4 border rounded-lg bg-muted/50">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4" />
-                <div>
-                  <span className="font-medium">Sync Groups from Azure AD</span>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Last sync: {lastGroupSyncTime ? (lastGroupSyncTime as Date).toLocaleString() : ''}
-                    {allGroups.length > 0 && (
-                      <span className="ml-2">• {allGroups.length} groups found</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <Button 
-                onClick={mockSyncGroups} 
-                disabled={isSyncing}
-                size="sm"
-              >
-                {isSyncing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Syncing...
-                  </>
-                ) : (
-                  'Sync Again'
-                )}
-              </Button>
-            </div>
-            
-            {isSyncing && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Syncing groups...</span>
-                  <span>{syncProgress}%</span>
-                </div>
-                <Progress value={syncProgress} className="h-2" />
-                <p className="text-xs text-muted-foreground">
-                  This may take a few moments for large directories
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Last Sync Info - shown after current sync */}
-        {hasSynced && lastGroupSyncTime && (
-          <div className="p-3 border rounded-lg bg-green-50 border-green-200">
-            <div className="flex items-center gap-2 text-sm">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-green-700 font-medium">Groups synced successfully</span>
-              <span className="text-green-600">
-                Last sync: {lastGroupSyncTime.toLocaleString()}
-                {allGroups.length > 0 && (
-                  <span className="ml-2">• {allGroups.length} groups found</span>
-                )}
-              </span>
-            </div>
-          </div>
-        )}
-
         {/* Search and Selection */}
-        {lastGroupSyncTime && (
-          <div className="space-y-4">
-            {/* Search Bar */}
-            <div className="space-y-2">
-              <Label htmlFor="group-search">Search Groups</Label>
-          <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-                  id="group-search"
-                  placeholder="Type at least 2 characters to search groups..."
-              value={searchQuery}
-                  onChange={(e) => searchGroups(e.target.value)}
-              className="pl-10"
-            />
-            {isSearching && (
-                  <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-            )}
+        <div className="space-y-4">
+          {/* Search Bar */}
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold">Search Groups</h3>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="group-search"
+                placeholder="Type at least 2 characters to search groups..."
+                value={searchQuery}
+                onChange={(e) => searchGroups(e.target.value)}
+                className="pl-10"
+              />
+              {isSearching && (
+                <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Groups are being synced from Azure AD in the background. You can start typing to find the group(s) you want.
+            </p>
           </div>
-              </div>
 
           {/* Select All Header */}
             {visibleGroups.length > 0 && (
@@ -424,7 +317,6 @@ export function GroupRoleWizard({ open, onOpenChange, tenant }: GroupRoleWizardP
                                 </div>
                               )}
                           </div>
-                        )}
                       </div>
     )
   }
