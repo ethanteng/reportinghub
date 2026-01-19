@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { ScopeSelector } from './ScopeSelector';
 import { ModelSelector } from './ModelSelector';
 import { RoleSelector } from './RoleSelector';
-import { PermissionsSelector } from './PermissionsSelector';
+import { PermissionsSelector, AVAILABLE_ACTIONS } from './PermissionsSelector';
 import { ReportPagesSelector, REPORT_PAGES } from './ReportPagesSelector';
 import {
   DynamicBindingScope,
@@ -30,13 +30,7 @@ export function ConfigurationPanel({ config, onConfigChange }: ConfigurationPane
   );
   const [choosePagesEnabled, setChoosePagesEnabled] = useState<boolean>(false);
   const [selectedPages, setSelectedPages] = useState<string[]>(REPORT_PAGES);
-  const [pagePermissions, setPagePermissions] = useState({
-    users: [] as string[],
-    groups: [] as string[],
-    userRoles: {} as Record<string, string>,
-    userPages: {} as Record<string, string[]>,
-  });
-
+  
   const handleChoosePagesToggle = (enabled: boolean) => {
     setChoosePagesEnabled(enabled);
     if (enabled && selectedPages.length === 0) {
@@ -60,6 +54,8 @@ export function ConfigurationPanel({ config, onConfigChange }: ConfigurationPane
     users: config?.permissions?.users || [],
     groups: config?.permissions?.groups || [],
     userRoles: config?.permissions?.userRoles || {},
+    userPages: {} as Record<string, string[]>,
+    userActions: {} as Record<string, string[]>,
   });
 
   // Sync state when config prop changes (e.g., when selecting a different menu item)
@@ -74,6 +70,8 @@ export function ConfigurationPanel({ config, onConfigChange }: ConfigurationPane
         users: config.permissions?.users || [],
         groups: config.permissions?.groups || [],
         userRoles: config.permissions?.userRoles || {},
+        userPages: config.permissions?.userPages || {},
+        userActions: (config.permissions as any)?.userActions || {},
       });
       isInitialMount.current = true;
     }
@@ -93,6 +91,29 @@ export function ConfigurationPanel({ config, onConfigChange }: ConfigurationPane
     }
   }, [scope]);
 
+  // Update all user/group page selections when the default selectedPages changes
+  // This includes when "deselect all" is chosen (empty array)
+  useEffect(() => {
+    if (choosePagesEnabled) {
+      setPermissions((prev) => {
+        const updatedUserPages: Record<string, string[]> = {};
+        const allUsersAndGroups = [...prev.users, ...prev.groups];
+        
+        // Update all existing user/group page selections to match the new default selectedPages
+        // If selectedPages is empty (deselect all), all user/group selections will be cleared
+        allUsersAndGroups.forEach((userOrGroup) => {
+          updatedUserPages[userOrGroup] = [...selectedPages];
+        });
+        
+        return {
+          ...prev,
+          userPages: updatedUserPages,
+        };
+      });
+    }
+  }, [selectedPages, choosePagesEnabled]);
+
+
   // Update config when any field changes (but skip initial mount and sync operations to prevent loop)
   useEffect(() => {
     if (!config || isInitialMount.current) {
@@ -111,6 +132,8 @@ export function ConfigurationPanel({ config, onConfigChange }: ConfigurationPane
         users: permissions.users,
         groups: permissions.groups,
         userRoles: permissions.userRoles,
+        userPages: Object.keys(permissions.userPages).length > 0 ? permissions.userPages : undefined,
+        userActions: Object.keys(permissions.userActions).length > 0 ? permissions.userActions : undefined,
       },
       dynamicBinding: dynamicBindingEnabled
         ? {
@@ -153,6 +176,11 @@ export function ConfigurationPanel({ config, onConfigChange }: ConfigurationPane
     selectedModelId !== undefined &&
     modelSupportsRLS(selectedModelId);
 
+  // Show permissions selector when either:
+  // 1. Dynamic Binding is enabled, OR
+  // 2. Choose Pages is enabled
+  const showPermissionsSelector = dynamicBindingEnabled || choosePagesEnabled;
+
   return (
     <div className="h-full flex flex-col">
       <Card className="flex-1 flex flex-col overflow-hidden">
@@ -174,7 +202,7 @@ export function ConfigurationPanel({ config, onConfigChange }: ConfigurationPane
 
           {/* Dynamic Binding Configuration - Only visible when enabled */}
           {dynamicBindingEnabled && (
-            <>
+            <div className="bg-blue-50/30 dark:bg-blue-950/20 rounded-lg p-4 space-y-4">
               {/* Dynamic Binding Scope */}
               <ScopeSelector value={scope} onChange={setScope} />
 
@@ -184,42 +212,12 @@ export function ConfigurationPanel({ config, onConfigChange }: ConfigurationPane
                 value={selectedModelId}
                 onChange={setSelectedModelId}
               />
-            </>
-          )}
-
-          {/* Permissions - Only visible for Group-level scope and when dynamic binding is enabled */}
-          {dynamicBindingEnabled && scope === DynamicBindingScope.Group && (
-            <div className="space-y-4">
-              <PermissionsSelector
-                users={permissions.users}
-                groups={permissions.groups}
-                onUsersChange={(users) => setPermissions((prev) => ({ ...prev, users }))}
-                onGroupsChange={(groups) => setPermissions((prev) => ({ ...prev, groups }))}
-                availableRoles={availableRoles}
-                userRoles={permissions.userRoles}
-                onUserRoleChange={(userOrGroup, roleId) => {
-                  setPermissions((prev) => {
-                    const newUserRoles = { ...prev.userRoles };
-                    if (roleId) {
-                      newUserRoles[userOrGroup] = roleId;
-                    } else {
-                      delete newUserRoles[userOrGroup];
-                    }
-                    return {
-                      ...prev,
-                      userRoles: newUserRoles,
-                    };
-                  });
-                }}
-                hasSelectedModel={selectedModelId !== undefined}
-                modelSupportsRLS={selectedModelId ? modelSupportsRLS(selectedModelId) : false}
-              />
             </div>
           )}
 
           {/* Choose Pages to Show - Independent section */}
           <div className="pt-6 mt-6 border-t-2">
-            <div className="space-y-4">
+            <div className="bg-emerald-50/30 dark:bg-emerald-950/20 rounded-lg p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <Label htmlFor="choose-pages" className="text-sm font-medium">
@@ -238,81 +236,101 @@ export function ConfigurationPanel({ config, onConfigChange }: ConfigurationPane
                     selectedPages={selectedPages}
                     onSelectedPagesChange={setSelectedPages}
                   />
-                  
-                  {/* User/Group Permissions for Pages */}
-                  <PermissionsSelector
-                    users={pagePermissions.users}
-                    groups={pagePermissions.groups}
-                    onUsersChange={(users) => {
-                      setPagePermissions((prev) => {
-                        const newUserPages = { ...prev.userPages };
-                        // Initialize pages for new users/groups with default selected pages
-                        users.forEach((user) => {
-                          if (!newUserPages[user]) {
-                            newUserPages[user] = [...selectedPages];
-                          }
-                        });
-                        // Remove pages for removed users
-                        Object.keys(newUserPages).forEach((key) => {
-                          if (!users.includes(key) && !pagePermissions.groups.includes(key)) {
-                            delete newUserPages[key];
-                          }
-                        });
-                        return { ...prev, users, userPages: newUserPages };
-                      });
-                    }}
-                    onGroupsChange={(groups) => {
-                      setPagePermissions((prev) => {
-                        const newUserPages = { ...prev.userPages };
-                        // Initialize pages for new groups with default selected pages
-                        groups.forEach((group) => {
-                          if (!newUserPages[group]) {
-                            newUserPages[group] = [...selectedPages];
-                          }
-                        });
-                        // Remove pages for removed groups
-                        Object.keys(newUserPages).forEach((key) => {
-                          if (!pagePermissions.users.includes(key) && !groups.includes(key)) {
-                            delete newUserPages[key];
-                          }
-                        });
-                        return { ...prev, groups, userPages: newUserPages };
-                      });
-                    }}
-                    availableRoles={availableRoles}
-                    userRoles={pagePermissions.userRoles}
-                    onUserRoleChange={(userOrGroup, roleId) => {
-                      setPagePermissions((prev) => {
-                        const newUserRoles = { ...prev.userRoles };
-                        if (roleId) {
-                          newUserRoles[userOrGroup] = roleId;
-                        } else {
-                          delete newUserRoles[userOrGroup];
-                        }
-                        return {
-                          ...prev,
-                          userRoles: newUserRoles,
-                        };
-                      });
-                    }}
-                    hasSelectedModel={selectedModelId !== undefined}
-                    modelSupportsRLS={selectedModelId ? modelSupportsRLS(selectedModelId) : false}
-                    availablePages={REPORT_PAGES}
-                    userPages={pagePermissions.userPages}
-                    onUserPagesChange={(userOrGroup, pages) => {
-                      setPagePermissions((prev) => ({
-                        ...prev,
-                        userPages: {
-                          ...prev.userPages,
-                          [userOrGroup]: pages,
-                        },
-                      }));
-                    }}
-                  />
                 </div>
               )}
             </div>
           </div>
+
+          {/* Permissions - Shared for both Dynamic Binding and Report Pages */}
+          {showPermissionsSelector && (
+            <div className="bg-violet-50/30 dark:bg-violet-950/20 rounded-lg p-4 space-y-4 pt-6 border-t">
+              <PermissionsSelector
+                users={permissions.users}
+                groups={permissions.groups}
+                onUsersChange={(users) => {
+                  setPermissions((prev) => {
+                    const newUserPages = { ...prev.userPages };
+                    // Initialize pages for new users/groups with default selected pages when pages are enabled
+                    if (choosePagesEnabled) {
+                      users.forEach((user) => {
+                        if (!newUserPages[user]) {
+                          newUserPages[user] = [...selectedPages];
+                        }
+                      });
+                      // Remove pages for removed users
+                      Object.keys(newUserPages).forEach((key) => {
+                        if (!users.includes(key) && !prev.groups.includes(key)) {
+                          delete newUserPages[key];
+                        }
+                      });
+                    }
+                    return { ...prev, users, userPages: newUserPages };
+                  });
+                }}
+                onGroupsChange={(groups) => {
+                  setPermissions((prev) => {
+                    const newUserPages = { ...prev.userPages };
+                    // Initialize pages for new groups with default selected pages when pages are enabled
+                    if (choosePagesEnabled) {
+                      groups.forEach((group) => {
+                        if (!newUserPages[group]) {
+                          newUserPages[group] = [...selectedPages];
+                        }
+                      });
+                      // Remove pages for removed groups
+                      Object.keys(newUserPages).forEach((key) => {
+                        if (!prev.users.includes(key) && !groups.includes(key)) {
+                          delete newUserPages[key];
+                        }
+                      });
+                    }
+                    return { ...prev, groups, userPages: newUserPages };
+                  });
+                }}
+                availableRoles={availableRoles}
+                userRoles={permissions.userRoles}
+                onUserRoleChange={(userOrGroup, roleId) => {
+                  setPermissions((prev) => {
+                    const newUserRoles = { ...prev.userRoles };
+                    if (roleId) {
+                      newUserRoles[userOrGroup] = roleId;
+                    } else {
+                      delete newUserRoles[userOrGroup];
+                    }
+                    return {
+                      ...prev,
+                      userRoles: newUserRoles,
+                    };
+                  });
+                }}
+                hasSelectedModel={selectedModelId !== undefined}
+                modelSupportsRLS={selectedModelId ? modelSupportsRLS(selectedModelId) : false}
+                isReportLevelScope={dynamicBindingEnabled && scope === DynamicBindingScope.Report}
+                availablePages={choosePagesEnabled ? REPORT_PAGES : []}
+                userPages={permissions.userPages}
+                onUserPagesChange={(userOrGroup, pages) => {
+                  setPermissions((prev) => ({
+                    ...prev,
+                    userPages: {
+                      ...prev.userPages,
+                      [userOrGroup]: pages,
+                    },
+                  }));
+                }}
+                availableActions={AVAILABLE_ACTIONS}
+                userActions={permissions.userActions}
+                onUserActionsChange={(userOrGroup, actions) => {
+                  setPermissions((prev) => ({
+                    ...prev,
+                    userActions: {
+                      ...prev.userActions,
+                      [userOrGroup]: actions,
+                    },
+                  }));
+                }}
+              />
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4 border-t">

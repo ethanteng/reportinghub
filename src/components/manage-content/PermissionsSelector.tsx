@@ -15,6 +15,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { PageMultiSelect } from './PageMultiSelect';
+import { ActionMultiSelect } from './ActionMultiSelect';
+
+export const AVAILABLE_ACTIONS = [
+  'Edit & Save',
+  'Edit & Save As',
+  'Export',
+  'Share',
+  'Model Refresh',
+  'Schedule',
+  'BI Genius',
+  'Query Deep Dive',
+];
 
 interface PermissionsSelectorProps {
   users: string[];
@@ -26,9 +38,13 @@ interface PermissionsSelectorProps {
   onUserRoleChange: (userOrGroup: string, roleId: string) => void;
   hasSelectedModel: boolean;
   modelSupportsRLS: boolean;
+  isReportLevelScope?: boolean; // Whether report-level dynamic binding is selected
   availablePages?: string[]; // Available pages for selection
   userPages?: Record<string, string[]>; // Map of user/group name to selected pages
   onUserPagesChange?: (userOrGroup: string, pages: string[]) => void;
+  availableActions?: string[]; // Available actions for selection
+  userActions?: Record<string, string[]>; // Map of user/group name to selected actions
+  onUserActionsChange?: (userOrGroup: string, actions: string[]) => void;
 }
 
 export function PermissionsSelector({
@@ -41,9 +57,13 @@ export function PermissionsSelector({
   onUserRoleChange,
   hasSelectedModel,
   modelSupportsRLS,
+  isReportLevelScope = false,
   availablePages = [],
   userPages = {},
   onUserPagesChange,
+  availableActions = [],
+  userActions = {},
+  onUserActionsChange,
 }: PermissionsSelectorProps) {
   const [inputValue, setInputValue] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -118,6 +138,10 @@ export function PermissionsSelector({
     if (onUserPagesChange && userPages && userPages[groupToRemove]) {
       onUserPagesChange(groupToRemove, []);
     }
+    // Remove action assignments when group is removed
+    if (onUserActionsChange && userActions && userActions[groupToRemove]) {
+      onUserActionsChange(groupToRemove, []);
+    }
   };
 
   const removeUser = (userToRemove: string) => {
@@ -130,12 +154,16 @@ export function PermissionsSelector({
     if (onUserPagesChange && userPages && userPages[userToRemove]) {
       onUserPagesChange(userToRemove, []);
     }
+    // Remove action assignments when user is removed
+    if (onUserActionsChange && userActions && userActions[userToRemove]) {
+      onUserActionsChange(userToRemove, []);
+    }
   };
 
   return (
     <div className="space-y-4">
       <FormField
-        label="Assign Permissions (Users/Security Groups)"
+        label="Configure Settings for Users or Groups"
       >
         <div className="relative">
           <Input
@@ -171,9 +199,29 @@ export function PermissionsSelector({
 
       {/* Selected groups/users - Each on its own line with role dropdown */}
       {(groups.length > 0 || users.length > 0) && (
-        <div className="space-y-3">
-          <Label className="text-sm font-medium">Groups/Users Selected:</Label>
-          <div className="space-y-2">
+        <div className="mt-6 pt-6 border-t-2 space-y-4 bg-muted/30 rounded-lg p-4">
+          {/* Column headers */}
+          <div className="flex items-center pb-2 border-b">
+            <div className="flex-shrink-0 min-w-[400px] mr-8"></div>
+            <div className="flex items-center gap-3">
+              {hasSelectedModel && (
+                <div className="relative flex-shrink-0 w-48">
+                  <Label className="text-sm font-medium text-foreground">Dynamic Binding Role</Label>
+                </div>
+              )}
+              {availablePages.length > 0 && onUserPagesChange && (
+                <div className="relative flex-shrink-0 w-48">
+                  <Label className="text-sm font-medium text-foreground">Report Pages</Label>
+                </div>
+              )}
+              {availableActions.length > 0 && onUserActionsChange && (
+                <div className="relative flex-shrink-0 w-48">
+                  <Label className="text-sm font-medium text-foreground">Actions</Label>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="space-y-3">
             {groups.map((group) => (
               <div key={group} className="flex items-center">
                 <div className="flex-shrink-0 min-w-[400px] mr-8">
@@ -193,7 +241,9 @@ export function PermissionsSelector({
                 <div className="flex items-center gap-3">
                   {hasSelectedModel && availableRoles.length === 0 && (
                     <div className="text-sm text-muted-foreground">
-                      {modelSupportsRLS 
+                      {isReportLevelScope
+                        ? 'Report-level dynamic binding is selected.'
+                        : modelSupportsRLS 
                         ? 'No roles available for the selected semantic model'
                         : 'The selected semantic model does not support roles'}
                     </div>
@@ -224,6 +274,13 @@ export function PermissionsSelector({
                       onSelectedPagesChange={(pages) => onUserPagesChange(group, pages)}
                     />
                   )}
+                  {availableActions.length > 0 && onUserActionsChange && (
+                    <ActionMultiSelect
+                      availableActions={availableActions}
+                      selectedActions={userActions[group] || []}
+                      onSelectedActionsChange={(actions) => onUserActionsChange(group, actions)}
+                    />
+                  )}
                 </div>
               </div>
             ))}
@@ -246,7 +303,9 @@ export function PermissionsSelector({
                 <div className="flex items-center gap-3">
                   {hasSelectedModel && availableRoles.length === 0 && (
                     <div className="text-sm text-muted-foreground">
-                      {modelSupportsRLS 
+                      {isReportLevelScope
+                        ? 'Report-level dynamic binding is selected.'
+                        : modelSupportsRLS 
                         ? 'No roles available for the selected semantic model'
                         : 'The selected semantic model does not support roles'}
                     </div>
@@ -275,6 +334,13 @@ export function PermissionsSelector({
                       availablePages={availablePages}
                       selectedPages={userPages[user] || []}
                       onSelectedPagesChange={(pages) => onUserPagesChange(user, pages)}
+                    />
+                  )}
+                  {availableActions.length > 0 && onUserActionsChange && (
+                    <ActionMultiSelect
+                      availableActions={availableActions}
+                      selectedActions={userActions[user] || []}
+                      onSelectedActionsChange={(actions) => onUserActionsChange(user, actions)}
                     />
                   )}
                 </div>

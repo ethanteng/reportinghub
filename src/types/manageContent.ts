@@ -55,6 +55,8 @@ export interface MenuItemConfig {
     users: string[];
     groups: string[];
     userRoles?: Record<string, string>; // Map of user/group name to role ID
+    userPages?: Record<string, string[]>; // Map of user/group name to selected pages
+    userActions?: Record<string, string[]>; // Map of user/group name to selected actions
   };
   dynamicBinding?: DynamicBindingConfig;
 }

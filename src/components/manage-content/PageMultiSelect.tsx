@@ -37,21 +37,38 @@ export function PageMultiSelect({
   }, [isOpen]);
 
   const allSelected = availablePages.length > 0 && selectedPages.length === availablePages.length;
-  const someSelected = selectedPages.length > 0 && selectedPages.length < availablePages.length;
-
-  const handleToggleAll = () => {
-    if (allSelected) {
-      onSelectedPagesChange([]);
-    } else {
-      onSelectedPagesChange([...availablePages]);
-    }
-  };
+  const allPagesOption = 'All Pages';
 
   const handleTogglePage = (page: string) => {
-    if (selectedPages.includes(page)) {
-      onSelectedPagesChange(selectedPages.filter((p) => p !== page));
+    if (page === allPagesOption) {
+      // "All Pages" acts as select all/deselect all
+      if (allSelected) {
+        // Deselect all
+        onSelectedPagesChange([]);
+      } else {
+        // Select all pages (including "All Pages")
+        onSelectedPagesChange([...availablePages]);
+      }
     } else {
-      onSelectedPagesChange([...selectedPages, page]);
+      // Regular page toggle
+      let newSelectedPages = selectedPages.includes(page)
+        ? selectedPages.filter((p) => p !== page)
+        : [...selectedPages, page];
+      
+      // Check if all pages (including "All Pages") are now selected
+      const allPagesNowSelected = availablePages.every((p) => newSelectedPages.includes(p));
+      
+      if (allPagesNowSelected) {
+        // Ensure "All Pages" is included
+        if (!newSelectedPages.includes(allPagesOption)) {
+          newSelectedPages.push(allPagesOption);
+        }
+      } else {
+        // Remove "All Pages" if not all pages are selected
+        newSelectedPages = newSelectedPages.filter((p) => p !== allPagesOption);
+      }
+      
+      onSelectedPagesChange(newSelectedPages);
     }
   };
 
@@ -75,18 +92,6 @@ export function PageMultiSelect({
       </Button>
       {isOpen && (
         <div className="absolute z-50 mt-1 w-48 border rounded-md bg-popover shadow-md max-h-60 overflow-auto">
-          <div className="p-2 border-b">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={allSelected}
-                onCheckedChange={handleToggleAll}
-                className={someSelected && !allSelected ? 'data-[state=checked]:bg-muted' : ''}
-              />
-              <label className="text-sm font-medium cursor-pointer">
-                {allSelected ? 'Deselect all' : 'Select all'}
-              </label>
-            </div>
-          </div>
           <div className="p-1">
             {availablePages.map((page) => (
               <div
