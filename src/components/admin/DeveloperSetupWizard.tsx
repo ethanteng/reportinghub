@@ -249,17 +249,18 @@ export function DeveloperSetupWizard({
     <>
       <Dialog open={open && !showTokenDialog && !showOAuthWizard} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{getStepTitle()}</DialogTitle>
-            <DialogDescription>
-              {currentStep === 0 && 'Choose how you want to integrate with Reporting Hub'}
-              {currentStep === 'A1' && 'Give your API key a name and set when it expires'}
-              {currentStep === 'A2' && 'Your API key has been generated'}
-              {currentStep === 'A3' && 'Optional: Customize token security settings'}
-              {currentStep === 'B1' && 'Review your token security configuration'}
-              {currentStep === 'B2' && 'Adjust token security settings to meet your requirements'}
-            </DialogDescription>
-          </DialogHeader>
+          {currentStep !== 0 && (
+            <DialogHeader>
+              <DialogTitle>{getStepTitle()}</DialogTitle>
+              <DialogDescription>
+                {currentStep === 'A1' && 'Give your API key a name and set when it expires'}
+                {currentStep === 'A2' && 'Your API key has been generated'}
+                {currentStep === 'A3' && 'Optional: Customize token security settings'}
+                {currentStep === 'B1' && 'Review your token security configuration'}
+                {currentStep === 'B2' && 'Adjust token security settings to meet your requirements'}
+              </DialogDescription>
+            </DialogHeader>
+          )}
 
           {/* Progress Indicator */}
           {currentStep !== 0 && (
