@@ -25,7 +25,7 @@ export function ScopeSelector({ selectedScopes, onScopesChange }: ScopeSelectorP
       <div>
         <h3 className="text-lg font-semibold mb-2">Select Scopes</h3>
         <p className="text-sm text-muted-foreground">
-          Choose the permissions this API key will have. Select only what's needed for your use case.
+          Choose the permissions this API key will have. Select only what&apos;s needed for your use case.
         </p>
       </div>
 

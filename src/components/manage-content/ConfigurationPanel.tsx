@@ -75,7 +75,7 @@ export function ConfigurationPanel({ config, onConfigChange }: ConfigurationPane
       });
       isInitialMount.current = true;
     }
-  }, [config?.id]);
+  }, [config, config?.id]);
 
   // Reset role selection when model changes or doesn't support RLS
   useEffect(() => {

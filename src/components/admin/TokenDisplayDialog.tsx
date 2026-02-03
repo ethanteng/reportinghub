@@ -44,7 +44,7 @@ export function TokenDisplayDialog({
         <DialogHeader>
           <DialogTitle>API Key Created Successfully</DialogTitle>
           <DialogDescription>
-            Your API key "{keyName}" has been created. Copy it now - you won't be able to see it again.
+            Your API key &quot;{keyName}&quot; has been created. Copy it now - you won&apos;t be able to see it again.
           </DialogDescription>
         </DialogHeader>
 

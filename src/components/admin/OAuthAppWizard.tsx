@@ -147,7 +147,7 @@ export function OAuthAppWizard({ open, onOpenChange, onComplete }: OAuthAppWizar
             <DialogHeader>
               <DialogTitle>OAuth Application Created</DialogTitle>
               <DialogDescription>
-                Your OAuth application "{name}" has been created. Copy the credentials now - you won't be able to see the client secret again.
+                Your OAuth application &quot;{name}&quot; has been created. Copy the credentials now - you won&apos;t be able to see the client secret again.
               </DialogDescription>
             </DialogHeader>
 
