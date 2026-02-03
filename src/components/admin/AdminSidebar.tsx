@@ -10,6 +10,7 @@ import {
   Users,
   Plug,
   Zap,
+  Code,
   ChevronRight,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -87,6 +88,17 @@ const navigation = [
       { name: 'Scheduled Tasks', href: '/admin/automation/tasks' },
       { name: 'Notifications', href: '/admin/automation/notifications' },
       { name: 'Event Webhooks', href: '/admin/automation/event-webhooks' },
+    ]
+  },
+  { 
+    name: 'Developer Settings', 
+    href: '/admin/developer-settings', 
+    icon: Code,
+    description: 'API keys, OAuth apps, and token security',
+    subItems: [
+      { name: 'API Keys', href: '/admin/developer-settings' },
+      { name: 'OAuth / SSO Applications', href: '/admin/developer-settings/oauth-apps' },
+      { name: 'Token Security', href: '/admin/developer-settings/token-security' },
     ]
   },
 ];
