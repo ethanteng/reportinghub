@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SectionTabs } from '@/components/admin/SectionTabs';
 import { OAuthAppsTable } from '@/components/admin/OAuthAppsTable';
 import { OAuthAppWizard } from '@/components/admin/OAuthAppWizard';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { OAuthApp } from '@/types/apiKeys';
-import { mockOAuthApps, generateMockClientId, generateMockClientSecret } from '@/lib/data/admin/oauthApps';
+import { mockOAuthApps } from '@/lib/data/admin/oauthApps';
+import { getStoredOAuthApps, addStoredOAuthApp, updateStoredOAuthApp, deleteStoredOAuthApp } from '@/lib/utils/oauthAppsStorage';
 
 const tabs = [
   { name: 'API Keys', href: '/admin/developer-settings' },
@@ -16,8 +17,23 @@ const tabs = [
 ];
 
 export default function OAuthAppsPage() {
-  const [apps, setApps] = useState<OAuthApp[]>(mockOAuthApps);
+  // Merge mock apps with stored apps from localStorage
+  const [apps, setApps] = useState<OAuthApp[]>(() => {
+    const stored = getStoredOAuthApps();
+    // Combine stored apps with mock apps, avoiding duplicates by ID
+    const mockIds = new Set(mockOAuthApps.map((app) => app.id));
+    const storedUnique = stored.filter((app) => !mockIds.has(app.id));
+    return [...storedUnique, ...mockOAuthApps];
+  });
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+
+  // Sync with localStorage when it changes (e.g., from other tabs/pages)
+  useEffect(() => {
+    const stored = getStoredOAuthApps();
+    const mockIds = new Set(mockOAuthApps.map((app) => app.id));
+    const storedUnique = stored.filter((app) => !mockIds.has(app.id));
+    setApps([...storedUnique, ...mockOAuthApps]);
+  }, []);
 
   const handleCreateApp = (appData: {
     name: string;
@@ -35,6 +51,8 @@ export default function OAuthAppsPage() {
       lastUsed: null,
       redirectUris: appData.redirectUris,
     };
+    // Persist to localStorage
+    addStoredOAuthApp(newApp);
     setApps([newApp, ...apps]);
   };
 
@@ -42,10 +60,16 @@ export default function OAuthAppsPage() {
     setApps((apps) =>
       apps.map((app) => {
         if (app.id === appId && app.status !== 'Revoked') {
-          return {
+          const updated = {
             ...app,
-            status: 'Revoked',
+            status: 'Revoked' as const,
           };
+          // Update in localStorage if it's a stored app
+          const stored = getStoredOAuthApps();
+          if (stored.some((a) => a.id === appId)) {
+            updateStoredOAuthApp(appId, { status: 'Revoked' });
+          }
+          return updated;
         }
         return app;
       })
@@ -53,6 +77,11 @@ export default function OAuthAppsPage() {
   };
 
   const handleDelete = (appId: string) => {
+    // Delete from localStorage if it's a stored app
+    const stored = getStoredOAuthApps();
+    if (stored.some((a) => a.id === appId)) {
+      deleteStoredOAuthApp(appId);
+    }
     setApps((apps) => apps.filter((app) => app.id !== appId));
   };
 

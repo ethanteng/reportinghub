@@ -49,6 +49,7 @@ QIDAQAB
 -----END RSA PRIVATE KEY-----`;
 
 const mockIssuer = 'https://api.reportinghub.com';
+const mockTokenTTL = 3600; // seconds (1 hour)
 
 export default function TokenSecurityPage() {
   const [readOnly, setReadOnly] = useState(true);
